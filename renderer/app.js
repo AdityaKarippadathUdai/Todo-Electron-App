@@ -39,7 +39,7 @@ async function loadTasks() {
 
     tasks.forEach(t => {
       const li = document.createElement('li');
-      li.className = 'task-item';
+      li.className = 'task-item is-entering';
 
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
@@ -76,6 +76,9 @@ async function loadTasks() {
       li.appendChild(delBtn);
 
       list.appendChild(li);
+      requestAnimationFrame(() => {
+        li.classList.remove('is-entering');
+      });
     });
 
   } catch (err) {
