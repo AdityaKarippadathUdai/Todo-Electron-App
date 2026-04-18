@@ -312,6 +312,10 @@ h2 {
   gap: 16px;
 }
 
+.insights-widget {
+  position: static;
+}
+
 .extension-widget {
   position: static;
 }
@@ -449,6 +453,42 @@ h2 {
 .widget-empty {
   text-align: center;
   color: var(--text-secondary);
+}
+
+.widget-eyebrow {
+  margin-bottom: 8px;
+}
+
+.progress-card {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 10px;
+  background: var(--surface-alt);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.progress-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+}
+
+.progress-track {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.progress-fill {
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2563eb, #60a5fa);
+  transition: width 0.25s ease;
 }
 
 .section-header {

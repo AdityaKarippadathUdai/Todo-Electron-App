@@ -67,6 +67,26 @@
         </section>
 
         <aside class="sidebar">
+          <section class="widget-card insights-widget">
+            <div class="widget-header">
+              <div>
+                <p class="eyebrow widget-eyebrow">Insights</p>
+                <h2 id="sidebarGreeting">Good Morning 👋</h2>
+                <p class="section-copy" id="todayTaskInsightCount">0 tasks today</p>
+              </div>
+            </div>
+
+            <div class="progress-card">
+              <div class="progress-meta">
+                <span id="todayProgressLabel">0 of 0 completed</span>
+                <span id="todayProgressPercent">0%</span>
+              </div>
+              <div class="progress-track" aria-hidden="true">
+                <div id="todayProgressBar" class="progress-fill"></div>
+              </div>
+            </div>
+          </section>
+
           <section class="widget-card today-widget">
             <div class="widget-header">
               <div>
@@ -93,6 +113,6 @@
     </section>
   </main>
   <div id="toast" class="toast" aria-live="polite" hidden></div>
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
