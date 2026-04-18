@@ -1,17 +1,60 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Todo App</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Todo List</h1>
+  <main class="app-shell">
+    <section class="dashboard-card">
+      <div class="dashboard-header">
+        <div>
+          <p class="eyebrow">Productivity Dashboard</p>
+          <h1>Todo List</h1>
+          <p class="subtitle">Plan your day with a focused, modern workspace.</p>
+        </div>
 
-  <input type="date" id="datePicker" />
-  <input type="text" id="taskInput" placeholder="New task..." />
-  <button id="addBtn">Add</button>
+        <div class="status-panel">
+          <span class="status-label">Selected Date</span>
+          <span class="status-value" id="selectedDateLabel">Today</span>
+        </div>
+      </div>
 
-  <ul id="taskList"></ul>
+      <div class="controls-card">
+        <div class="field-group">
+          <label for="datePicker">Due date</label>
+          <input type="date" id="datePicker" />
+        </div>
 
+        <div class="field-group task-field">
+          <label for="taskInput">Task</label>
+          <input type="text" id="taskInput" placeholder="Add a new task..." />
+        </div>
+
+        <button id="addBtn">Add Task</button>
+      </div>
+
+      <section class="tasks-section">
+        <div class="section-header">
+          <div>
+            <h2>Tasks</h2>
+            <p class="section-copy">Track what needs attention and mark progress in one place.</p>
+          </div>
+          <span class="task-count" id="taskCount">0 tasks</span>
+        </div>
+
+        <ul id="taskList" class="task-list"></ul>
+      </section>
+    </section>
+  </main>
   <script src="app.js"></script>
 </body>
 </html>

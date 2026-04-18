@@ -1,72 +1,88 @@
 const list = document.getElementById('taskList');
 const datePicker = document.getElementById('datePicker');
 const addBtn = document.getElementById('addBtn');
+const taskInput = document.getElementById('taskInput');
+const taskCount = document.getElementById('taskCount');
+const selectedDateLabel = document.getElementById('selectedDateLabel');
 
-// ✅ Set today's date
 const today = new Date().toISOString().split('T')[0];
 datePicker.value = today;
+updateSelectedDateLabel(today);
 
-// ✅ Load tasks on startup
 window.onload = () => {
   loadTasks();
 };
 
-// ✅ Attach event listener (IMPORTANT FIX)
 addBtn.addEventListener('click', addTask);
+taskInput.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') {
+    addTask();
+  }
+});
 
 async function loadTasks() {
   const date = datePicker.value;
-
-  console.log("Loading tasks for:", date);
+  updateSelectedDateLabel(date);
 
   try {
     const tasks = await window.api.getTasks(date);
-
-    console.log("Tasks:", tasks);
-
     list.innerHTML = '';
+    taskCount.textContent = `${tasks.length} ${tasks.length === 1 ? 'task' : 'tasks'}`;
+
+    if (tasks.length === 0) {
+      const emptyState = document.createElement('li');
+      emptyState.className = 'empty-state';
+      emptyState.textContent = 'No tasks scheduled for this date yet.';
+      list.appendChild(emptyState);
+      return;
+    }
 
     tasks.forEach(t => {
       const li = document.createElement('li');
+      li.className = 'task-item';
 
-      // ⚠️ Avoid inline onclick here too
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.checked = t.completed;
+      checkbox.className = 'task-checkbox';
       checkbox.addEventListener('change', () => toggle(t.id));
 
+      const taskMain = document.createElement('div');
+      taskMain.className = 'task-main';
+
       const text = document.createElement('span');
-      text.textContent = " " + t.title + " ";
+      text.className = `task-text${t.completed ? ' is-complete' : ''}`;
+      text.textContent = t.title;
 
       const delBtn = document.createElement('button');
-      delBtn.textContent = "X";
+      delBtn.className = 'delete-btn';
+      delBtn.textContent = 'Delete';
       delBtn.addEventListener('click', () => removeTask(t.id));
 
-      li.appendChild(checkbox);
-      li.appendChild(text);
+      taskMain.appendChild(checkbox);
+      taskMain.appendChild(text);
+      li.appendChild(taskMain);
       li.appendChild(delBtn);
 
       list.appendChild(li);
     });
 
   } catch (err) {
-    console.error("Load failed:", err);
+    console.error('Load failed:', err);
   }
 }
 
 async function addTask() {
-  const title = document.getElementById('taskInput').value;
+  const title = taskInput.value.trim();
   const dueDate = datePicker.value;
 
-  console.log("Add clicked:", title, dueDate);
-
   if (!title) {
-    alert("Enter a task");
+    alert('Enter a task');
     return;
   }
 
   if (!dueDate) {
-    alert("Select a date");
+    alert('Select a date');
     return;
   }
 
@@ -75,15 +91,12 @@ async function addTask() {
       title,
       dueDate: new Date(dueDate)
     });
-
-    console.log("Task added");
-
-    document.getElementById('taskInput').value = '';
+    taskInput.value = '';
 
     await loadTasks();
 
   } catch (err) {
-    console.error("Add failed:", err);
+    console.error('Add failed:', err);
   }
 }
 
@@ -92,7 +105,7 @@ async function toggle(id) {
     await window.api.toggleTask(id);
     await loadTasks();
   } catch (err) {
-    console.error("Toggle failed:", err);
+    console.error('Toggle failed:', err);
   }
 }
 
@@ -101,8 +114,23 @@ async function removeTask(id) {
     await window.api.deleteTask(id);
     await loadTasks();
   } catch (err) {
-    console.error("Delete failed:", err);
+    console.error('Delete failed:', err);
   }
 }
 
 datePicker.addEventListener('change', loadTasks);
+
+function updateSelectedDateLabel(dateValue) {
+  if (!dateValue) {
+    selectedDateLabel.textContent = 'No date';
+    return;
+  }
+
+  const formattedDate = new Date(`${dateValue}T00:00:00`).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  });
+
+  selectedDateLabel.textContent = formattedDate;
+}
