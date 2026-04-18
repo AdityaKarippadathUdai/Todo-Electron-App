@@ -5,6 +5,13 @@ const addBtn = document.getElementById('addBtn');
 const taskInput = document.getElementById('taskInput');
 const taskCount = document.getElementById('taskCount');
 const selectedDateLabel = document.getElementById('selectedDateLabel');
+const reminderBanner = document.getElementById('reminderBanner');
+
+const REMINDER_POLL_MS = 60_000;
+const REMINDER_HIGHLIGHT_MS = 12_000;
+const reminderHighlightTimers = new Map();
+let lastReminderCheckAt = new Date();
+let bannerTimer = null;
 
 const today = new Date().toISOString().split('T')[0];
 datePicker.value = today;
@@ -12,6 +19,7 @@ updateSelectedDateLabel(today);
 
 window.onload = () => {
   loadTasks();
+  initializeReminderSystem();
 };
 
 addBtn.addEventListener('click', addTask);
@@ -41,6 +49,7 @@ async function loadTasks() {
     tasks.forEach(t => {
       const li = document.createElement('li');
       li.className = 'task-item is-entering';
+      li.dataset.taskId = t.id;
 
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
@@ -207,4 +216,136 @@ function isPastSchedule(dateValue, timeValue) {
   }
 
   return schedule.getTime() < Date.now();
+}
+
+async function initializeReminderSystem() {
+  await requestDesktopNotificationPermission();
+  await checkDueReminders();
+  window.setInterval(checkDueReminders, REMINDER_POLL_MS);
+}
+
+async function checkDueReminders() {
+  const now = new Date();
+
+  try {
+    const reminders = await window.api.getDueReminders(
+      lastReminderCheckAt.toISOString(),
+      now.toISOString()
+    );
+
+    if (!Array.isArray(reminders) || reminders.length === 0) {
+      lastReminderCheckAt = now;
+      return;
+    }
+
+    const reminderIds = reminders.map((task) => task.id);
+    await window.api.acknowledgeReminders(reminderIds);
+
+    reminders.forEach((task) => {
+      triggerReminder(task);
+    });
+  } catch (err) {
+    console.error('Reminder check failed:', err);
+  } finally {
+    lastReminderCheckAt = now;
+  }
+}
+
+async function requestDesktopNotificationPermission() {
+  if (!('Notification' in window)) {
+    return;
+  }
+
+  if (Notification.permission === 'default') {
+    try {
+      await Notification.requestPermission();
+    } catch (err) {
+      console.error('Notification permission request failed:', err);
+    }
+  }
+}
+
+function triggerReminder(task) {
+  const scheduleLabel = formatTaskSchedule(task);
+  const message = `${task.title} is due ${scheduleLabel ? `now (${scheduleLabel})` : 'now'}.`;
+
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification('Task Reminder', {
+      body: message,
+      silent: true
+    });
+  } else {
+    showReminderBanner(message);
+  }
+
+  playReminderSound();
+  highlightTask(task.id);
+}
+
+function showReminderBanner(message) {
+  if (!reminderBanner) {
+    return;
+  }
+
+  reminderBanner.textContent = message;
+  reminderBanner.hidden = false;
+  reminderBanner.classList.add('is-visible');
+
+  if (bannerTimer) {
+    window.clearTimeout(bannerTimer);
+  }
+
+  bannerTimer = window.setTimeout(() => {
+    reminderBanner.classList.remove('is-visible');
+    bannerTimer = window.setTimeout(() => {
+      reminderBanner.hidden = true;
+    }, 200);
+  }, 5000);
+}
+
+function playReminderSound() {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+
+  if (!AudioContextClass) {
+    return;
+  }
+
+  const audioContext = new AudioContextClass();
+  const oscillator = audioContext.createOscillator();
+  const gainNode = audioContext.createGain();
+
+  oscillator.type = 'sine';
+  oscillator.frequency.value = 740;
+  gainNode.gain.setValueAtTime(0.0001, audioContext.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.03, audioContext.currentTime + 0.01);
+  gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.32);
+
+  oscillator.connect(gainNode);
+  gainNode.connect(audioContext.destination);
+  oscillator.start();
+  oscillator.stop(audioContext.currentTime + 0.34);
+  oscillator.onended = () => {
+    audioContext.close().catch(() => {});
+  };
+}
+
+function highlightTask(taskId) {
+  const taskItem = list.querySelector(`[data-task-id="${CSS.escape(taskId)}"]`);
+
+  if (!taskItem) {
+    return;
+  }
+
+  taskItem.classList.add('is-reminded');
+
+  if (reminderHighlightTimers.has(taskId)) {
+    window.clearTimeout(reminderHighlightTimers.get(taskId));
+  }
+
+  const timerId = window.setTimeout(() => {
+    taskItem.classList.remove('is-reminded');
+    reminderHighlightTimers.delete(taskId);
+  }, REMINDER_HIGHLIGHT_MS);
+
+  reminderHighlightTimers.set(taskId, timerId);
 }

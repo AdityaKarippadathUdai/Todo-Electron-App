@@ -26,6 +26,7 @@ export async function createTask(data) {
       title: taskInput.title,
       dueDate: taskInput.dueDate,
       dueTime: taskInput.dueTime,
+      notified: false,
       completed: false
     }
   });
@@ -42,6 +43,56 @@ export async function toggleTask(id) {
 
 export async function deleteTask(id) {
   return prisma.task.delete({ where: { id } });
+}
+
+export async function getDueTasksForReminder(windowStart, windowEnd) {
+  const start = new Date(windowStart);
+  const end = new Date(windowEnd);
+  const rangeStart = new Date(start);
+  rangeStart.setHours(0, 0, 0, 0);
+  const rangeEnd = new Date(end);
+  rangeEnd.setHours(23, 59, 59, 999);
+
+  const tasks = await prisma.task.findMany({
+    where: {
+      completed: false,
+      notified: false,
+      dueTime: {
+        not: null
+      },
+      dueDate: {
+        gte: rangeStart,
+        lte: rangeEnd
+      }
+    },
+    orderBy: {
+      dueDate: 'asc'
+    }
+  });
+
+  return tasks.filter((task) => {
+    const dueAt = combineSchedule(task.dueDate, task.dueTime);
+    return dueAt >= start && dueAt <= end;
+  });
+}
+
+export async function markTasksNotified(ids) {
+  const taskIds = Array.isArray(ids) ? ids.filter(Boolean) : [];
+
+  if (taskIds.length === 0) {
+    return { count: 0 };
+  }
+
+  return prisma.task.updateMany({
+    where: {
+      id: {
+        in: taskIds
+      }
+    },
+    data: {
+      notified: true
+    }
+  });
 }
 
 function normalizeTaskInput(data) {

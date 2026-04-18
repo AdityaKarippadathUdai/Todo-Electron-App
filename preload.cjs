@@ -23,6 +23,8 @@ contextBridge.exposeInMainWorld('api', {
   ready: () => controllerPromise.then(() => true),
   getTasks: (date) => withController('getTasks', date),
   addTask: (task) => withController('addTask', task),
+  getDueReminders: (windowStart, windowEnd) => withController('getDueReminders', windowStart, windowEnd),
+  acknowledgeReminders: (ids) => withController('acknowledgeReminders', ids),
   toggleTask: (id) => withController('toggleTask', id),
   deleteTask: (id) => withController('deleteTask', id)
 });

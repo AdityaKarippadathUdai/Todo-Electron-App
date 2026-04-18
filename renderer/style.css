@@ -131,6 +131,24 @@ h2 {
   background: var(--surface);
 }
 
+.reminder-banner {
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(59, 130, 246, 0.28);
+  background: rgba(59, 130, 246, 0.14);
+  color: #dbeafe;
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.reminder-banner.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .status-panel {
   min-width: 170px;
   padding: 16px 18px;
@@ -281,6 +299,14 @@ h2 {
   transform: translateY(10px);
 }
 
+.task-item.is-reminded {
+  border-color: rgba(59, 130, 246, 0.55);
+  box-shadow:
+    0 0 0 1px rgba(59, 130, 246, 0.2),
+    0 14px 32px rgba(0, 0, 0, 0.28);
+  animation: reminderPulse 1.8s ease;
+}
+
 .task-main {
   gap: 14px;
   min-width: 0;
@@ -387,6 +413,26 @@ h2 {
       0 0 0 1px rgba(59, 130, 246, 0.95),
       0 0 0 4px rgba(59, 130, 246, 0.18),
       0 0 24px rgba(59, 130, 246, 0.18);
+  }
+}
+
+@keyframes reminderPulse {
+  0% {
+    box-shadow:
+      0 0 0 0 rgba(59, 130, 246, 0.35),
+      0 14px 32px rgba(0, 0, 0, 0.28);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 10px rgba(59, 130, 246, 0),
+      0 14px 32px rgba(0, 0, 0, 0.28);
+  }
+
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(59, 130, 246, 0),
+      0 14px 32px rgba(0, 0, 0, 0.28);
   }
 }
 
