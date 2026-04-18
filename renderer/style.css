@@ -146,6 +146,7 @@ h2 {
 
 .controls-card {
   gap: 16px;
+  align-items: end;
   flex-wrap: wrap;
   padding: 18px;
   border: 1px solid var(--border);
@@ -171,12 +172,14 @@ h2 {
 #taskInput,
 #datePicker {
   width: 100%;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
+  border: 0;
+  border-radius: 8px;
   color: var(--text-primary);
-  padding: 14px 16px;
+  padding: 11px 12px;
   outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+  transition: box-shadow 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+  appearance: none;
 }
 
 #taskInput::placeholder {
@@ -185,30 +188,43 @@ h2 {
 
 #taskInput:focus,
 #datePicker:focus {
-  border-color: rgba(59, 130, 246, 0.75);
-  box-shadow: 0 0 0 4px var(--accent-soft);
+  box-shadow:
+    0 0 0 1px rgba(59, 130, 246, 0.95),
+    0 0 0 4px rgba(59, 130, 246, 0.18),
+    0 0 24px rgba(59, 130, 246, 0.18);
 }
 
 #addBtn,
 .delete-btn {
   border: 0;
-  border-radius: var(--radius-sm);
+  border-radius: 8px;
   cursor: pointer;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+  transition: transform 0.14s ease, box-shadow 0.18s ease, background-color 0.18s ease, color 0.18s ease;
 }
 
 #addBtn {
   align-self: end;
-  padding: 14px 20px;
-  background: linear-gradient(180deg, #4b8df7, var(--accent));
+  min-width: 132px;
+  padding: 11px 18px;
+  background: var(--accent);
   color: #fff;
   font-weight: 600;
   box-shadow: 0 12px 24px rgba(59, 130, 246, 0.28);
 }
 
+#addBtn:hover {
+  background: #60a5fa;
+}
+
 #addBtn:hover,
-.delete-btn:hover {
+.delete-btn:hover,
+.task-item:hover {
   transform: translateY(-1px);
+}
+
+#addBtn:active,
+.delete-btn:active {
+  transform: scale(0.98);
 }
 
 .tasks-section {
@@ -233,49 +249,106 @@ h2 {
   padding: 0;
   margin: 0;
   display: grid;
-  gap: 14px;
+  gap: 0;
 }
 
 .task-item {
   gap: 16px;
-  padding: 16px 18px;
+  padding: 14px 16px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: 10px;
   box-shadow: var(--shadow-md);
+  margin-bottom: 14px;
+  transition: transform 0.18s ease, filter 0.18s ease, border-color 0.18s ease;
+}
+
+.task-item:hover {
+  filter: brightness(1.06);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .task-main {
   gap: 14px;
   min-width: 0;
   flex: 1;
+  align-items: flex-start;
 }
 
 .task-checkbox {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--accent);
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  border-radius: 6px;
+  border: 1px solid rgba(156, 163, 175, 0.5);
+  background: var(--surface-alt);
+  appearance: none;
+  -webkit-appearance: none;
   cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.task-checkbox::after {
+  content: "";
+  width: 5px;
+  height: 10px;
+  border: solid #ffffff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) scale(0);
+  transition: transform 0.12s ease;
+}
+
+.task-checkbox:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.14);
+}
+
+.task-checkbox:checked::after {
+  transform: rotate(45deg) scale(1);
+}
+
+.task-checkbox:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+.task-copy {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
 }
 
 .task-text {
   min-width: 0;
   word-break: break-word;
   font-size: 0.98rem;
+  line-height: 1.4;
 }
 
 .task-text.is-complete {
   text-decoration: line-through;
 }
 
+.task-date {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
 .delete-btn {
-  padding: 10px 12px;
+  width: 38px;
+  height: 38px;
+  padding: 0;
   background: var(--surface-alt);
   color: var(--text-secondary);
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .delete-btn:hover {
   background: rgba(239, 68, 68, 0.18);
-  color: #fca5a5;
+  color: #f87171;
 }
 
 .empty-state {
@@ -299,7 +372,15 @@ h2 {
     align-items: stretch;
   }
 
+  .controls-card {
+    align-items: stretch;
+  }
+
   #addBtn {
+    width: 100%;
+  }
+
+  .delete-btn {
     width: 100%;
   }
 }

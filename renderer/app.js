@@ -50,17 +50,28 @@ async function loadTasks() {
       const taskMain = document.createElement('div');
       taskMain.className = 'task-main';
 
+      const taskCopy = document.createElement('div');
+      taskCopy.className = 'task-copy';
+
       const text = document.createElement('span');
       text.className = `task-text${t.completed ? ' is-complete' : ''}`;
       text.textContent = t.title;
 
+      const date = document.createElement('span');
+      date.className = 'task-date';
+      date.textContent = formatTaskDate(t.dueDate);
+
       const delBtn = document.createElement('button');
       delBtn.className = 'delete-btn';
-      delBtn.textContent = 'Delete';
+      delBtn.type = 'button';
+      delBtn.setAttribute('aria-label', `Delete ${t.title}`);
+      delBtn.innerHTML = '&times;';
       delBtn.addEventListener('click', () => removeTask(t.id));
 
       taskMain.appendChild(checkbox);
-      taskMain.appendChild(text);
+      taskCopy.appendChild(text);
+      taskCopy.appendChild(date);
+      taskMain.appendChild(taskCopy);
       li.appendChild(taskMain);
       li.appendChild(delBtn);
 
@@ -133,4 +144,16 @@ function updateSelectedDateLabel(dateValue) {
   });
 
   selectedDateLabel.textContent = formattedDate;
+}
+
+function formatTaskDate(dateValue) {
+  if (!dateValue) {
+    return 'No due date';
+  }
+
+  return new Date(dateValue).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  });
 }
