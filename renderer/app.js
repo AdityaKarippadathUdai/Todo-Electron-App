@@ -1,5 +1,6 @@
 const list = document.getElementById('taskList');
 const datePicker = document.getElementById('datePicker');
+const timePicker = document.getElementById('timePicker');
 const addBtn = document.getElementById('addBtn');
 const taskInput = document.getElementById('taskInput');
 const taskCount = document.getElementById('taskCount');
@@ -59,7 +60,7 @@ async function loadTasks() {
 
       const date = document.createElement('span');
       date.className = 'task-date';
-      date.textContent = formatTaskDate(t.dueDate);
+      date.textContent = formatTaskSchedule(t);
 
       const delBtn = document.createElement('button');
       delBtn.className = 'delete-btn';
@@ -89,6 +90,7 @@ async function loadTasks() {
 async function addTask() {
   const title = taskInput.value.trim();
   const dueDate = datePicker.value;
+  const dueTime = timePicker.value;
 
   if (!title) {
     alert('Enter a task');
@@ -100,12 +102,19 @@ async function addTask() {
     return;
   }
 
+  if (isPastSchedule(dueDate, dueTime)) {
+    alert('Choose a due date and time that is not in the past');
+    return;
+  }
+
   try {
     await window.api.addTask({
       title,
-      dueDate: new Date(dueDate)
+      dueDate,
+      dueTime: dueTime || null
     });
     taskInput.value = '';
+    timePicker.value = '';
 
     await loadTasks();
 
@@ -159,4 +168,43 @@ function formatTaskDate(dateValue) {
     day: 'numeric',
     year: 'numeric'
   });
+}
+
+function formatTaskSchedule(task) {
+  const dateLabel = formatTaskDate(task.dueDate);
+
+  if (task.dueTime) {
+    return `${dateLabel} at ${formatTimeLabel(task.dueTime)}`;
+  }
+
+  return dateLabel;
+}
+
+function formatTimeLabel(timeValue) {
+  const [hours = '00', minutes = '00'] = String(timeValue).split(':');
+  const time = new Date();
+  time.setHours(Number(hours), Number(minutes), 0, 0);
+
+  return time.toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit'
+  });
+}
+
+function isPastSchedule(dateValue, timeValue) {
+  if (!dateValue) {
+    return false;
+  }
+
+  const [year, month, day] = dateValue.split('-').map(Number);
+  const schedule = new Date(year, month - 1, day);
+
+  if (timeValue) {
+    const [hours, minutes] = timeValue.split(':').map(Number);
+    schedule.setHours(hours, minutes, 0, 0);
+  } else {
+    schedule.setHours(23, 59, 59, 999);
+  }
+
+  return schedule.getTime() < Date.now();
 }

@@ -126,7 +126,8 @@ h2 {
 .controls-card,
 .task-item,
 #taskInput,
-#datePicker {
+#datePicker,
+#timePicker {
   background: var(--surface);
 }
 
@@ -174,7 +175,8 @@ h2 {
 }
 
 #taskInput,
-#datePicker {
+#datePicker,
+#timePicker {
   width: 100%;
   border: 0;
   border-radius: 8px;
@@ -191,7 +193,8 @@ h2 {
 }
 
 #taskInput:focus,
-#datePicker:focus {
+#datePicker:focus,
+#timePicker:focus {
   box-shadow:
     0 0 0 1px rgba(59, 130, 246, 0.95),
     0 0 0 4px rgba(59, 130, 246, 0.18),
@@ -347,6 +350,7 @@ h2 {
 .task-date {
   color: var(--text-secondary);
   font-size: 0.82rem;
+  transition: opacity 0.2s ease, color 0.2s ease;
 }
 
 .delete-btn {
