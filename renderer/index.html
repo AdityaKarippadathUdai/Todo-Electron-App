@@ -49,17 +49,32 @@
 
       <div id="reminderBanner" class="reminder-banner" aria-live="polite" hidden></div>
 
-      <section class="tasks-section">
-        <div class="section-header">
-          <div>
-            <h2>Tasks</h2>
-            <p class="section-copy">Track what needs attention and mark progress in one place.</p>
+      <div class="dashboard-grid">
+        <section class="tasks-section">
+          <div class="section-header">
+            <div>
+              <h2>Tasks</h2>
+              <p class="section-copy">Track what needs attention and mark progress in one place.</p>
+            </div>
+            <span class="task-count" id="taskCount">0 tasks</span>
           </div>
-          <span class="task-count" id="taskCount">0 tasks</span>
-        </div>
 
-        <ul id="taskList" class="task-list"></ul>
-      </section>
+          <ul id="taskList" class="task-list"></ul>
+        </section>
+
+        <aside class="widget-panel">
+          <section class="widget-card today-widget">
+            <div class="widget-header">
+              <div>
+                <h2>Today's Tasks</h2>
+                <p class="section-copy">Upcoming tasks due today, sorted by schedule.</p>
+              </div>
+            </div>
+
+            <div id="todayTasks" class="widget-list"></div>
+          </section>
+        </aside>
+      </div>
     </section>
   </main>
   <script src="app.js"></script>

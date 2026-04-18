@@ -6,6 +6,7 @@ const taskInput = document.getElementById('taskInput');
 const taskCount = document.getElementById('taskCount');
 const selectedDateLabel = document.getElementById('selectedDateLabel');
 const reminderBanner = document.getElementById('reminderBanner');
+const todayTasks = document.getElementById('todayTasks');
 
 const REMINDER_POLL_MS = 60_000;
 const REMINDER_HIGHLIGHT_MS = 12_000;
@@ -19,6 +20,7 @@ updateSelectedDateLabel(today);
 
 window.onload = () => {
   loadTasks();
+  loadTodayWidget();
   initializeReminderSystem();
 };
 
@@ -96,6 +98,21 @@ async function loadTasks() {
   }
 }
 
+async function loadTodayWidget() {
+  const todayDate = new Date().toISOString().split('T')[0];
+
+  try {
+    const tasks = await window.api.getTasks(todayDate);
+    const pendingTodayTasks = tasks
+      .filter((task) => !task.completed)
+      .sort(compareTasksByDueTime);
+
+    renderTodayWidget(pendingTodayTasks);
+  } catch (err) {
+    console.error('Today widget load failed:', err);
+  }
+}
+
 async function addTask() {
   const title = taskInput.value.trim();
   const dueDate = datePicker.value;
@@ -126,6 +143,7 @@ async function addTask() {
     timePicker.value = '';
 
     await loadTasks();
+    await loadTodayWidget();
 
   } catch (err) {
     console.error('Add failed:', err);
@@ -136,6 +154,7 @@ async function toggle(id) {
   try {
     await window.api.toggleTask(id);
     await loadTasks();
+    await loadTodayWidget();
   } catch (err) {
     console.error('Toggle failed:', err);
   }
@@ -145,6 +164,7 @@ async function removeTask(id) {
   try {
     await window.api.deleteTask(id);
     await loadTasks();
+    await loadTodayWidget();
   } catch (err) {
     console.error('Delete failed:', err);
   }
@@ -331,21 +351,81 @@ function playReminderSound() {
 
 function highlightTask(taskId) {
   const taskItem = list.querySelector(`[data-task-id="${CSS.escape(taskId)}"]`);
+  const widgetItem = todayTasks.querySelector(`[data-task-id="${CSS.escape(taskId)}"]`);
 
-  if (!taskItem) {
-    return;
+  if (taskItem) {
+    taskItem.classList.add('is-reminded');
   }
-
-  taskItem.classList.add('is-reminded');
 
   if (reminderHighlightTimers.has(taskId)) {
     window.clearTimeout(reminderHighlightTimers.get(taskId));
   }
 
   const timerId = window.setTimeout(() => {
-    taskItem.classList.remove('is-reminded');
+    if (taskItem) {
+      taskItem.classList.remove('is-reminded');
+    }
+
+    if (widgetItem) {
+      widgetItem.classList.remove('is-reminded');
+    }
+
     reminderHighlightTimers.delete(taskId);
   }, REMINDER_HIGHLIGHT_MS);
 
+  if (widgetItem) {
+    widgetItem.classList.add('is-reminded');
+  }
+
   reminderHighlightTimers.set(taskId, timerId);
+}
+
+function renderTodayWidget(tasks) {
+  todayTasks.innerHTML = '';
+
+  if (!tasks.length) {
+    const emptyState = document.createElement('div');
+    emptyState.className = 'widget-empty';
+    emptyState.textContent = 'No tasks for today 🎉';
+    todayTasks.appendChild(emptyState);
+    return;
+  }
+
+  tasks.forEach((task) => {
+    const item = document.createElement('article');
+    item.className = 'widget-item';
+    item.dataset.taskId = task.id;
+
+    const copy = document.createElement('div');
+    copy.className = 'widget-copy';
+
+    const title = document.createElement('div');
+    title.className = 'widget-title';
+    title.textContent = task.title;
+
+    const time = document.createElement('div');
+    time.className = 'widget-time';
+    time.textContent = task.dueTime ? formatTimeLabel(task.dueTime) : 'Any time';
+
+    const status = document.createElement('span');
+    status.className = 'widget-status';
+    status.setAttribute('aria-hidden', 'true');
+
+    copy.appendChild(title);
+    copy.appendChild(time);
+    item.appendChild(copy);
+    item.appendChild(status);
+    todayTasks.appendChild(item);
+  });
+}
+
+function compareTasksByDueTime(a, b) {
+  const aTime = a.dueTime ?? '99:99';
+  const bTime = b.dueTime ?? '99:99';
+
+  if (aTime === bTime) {
+    return new Date(a.createdAt) - new Date(b.createdAt);
+  }
+
+  return aTime.localeCompare(bTime);
 }

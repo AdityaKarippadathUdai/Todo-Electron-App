@@ -42,7 +42,7 @@ input {
 }
 
 .dashboard-card {
-  width: min(100%, 600px);
+  width: min(100%, 1180px);
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-lg);
@@ -258,6 +258,106 @@ h2 {
   gap: 18px;
 }
 
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(280px, 3fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.widget-panel {
+  position: relative;
+}
+
+.widget-card {
+  position: sticky;
+  top: 24px;
+  padding: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  display: grid;
+  gap: 16px;
+  max-height: calc(100vh - 80px);
+}
+
+.widget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.widget-list {
+  display: grid;
+  gap: 12px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.widget-item,
+.widget-empty {
+  background: var(--surface-alt);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 14px 14px;
+}
+
+.widget-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  transition: transform 0.2s ease, border-color 0.2s ease, filter 0.2s ease;
+}
+
+.widget-item:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.widget-item.is-reminded {
+  border-color: rgba(59, 130, 246, 0.55);
+  box-shadow:
+    0 0 0 1px rgba(59, 130, 246, 0.18),
+    0 14px 32px rgba(0, 0, 0, 0.22);
+  animation: reminderPulse 1.8s ease;
+}
+
+.widget-copy {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.widget-title {
+  font-weight: 600;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.widget-time {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.widget-status {
+  width: 10px;
+  height: 10px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 5px rgba(59, 130, 246, 0.14);
+  flex-shrink: 0;
+}
+
+.widget-empty {
+  text-align: center;
+  color: var(--text-secondary);
+}
+
 .section-header {
   gap: 16px;
 }
@@ -441,6 +541,10 @@ h2 {
     padding: 24px;
   }
 
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
   .dashboard-header,
   .section-header,
   .task-item {
@@ -458,5 +562,10 @@ h2 {
 
   .delete-btn {
     width: 100%;
+  }
+
+  .widget-card {
+    position: static;
+    max-height: none;
   }
 }
