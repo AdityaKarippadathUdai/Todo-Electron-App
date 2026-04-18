@@ -1,0 +1,4 @@
+database/prisma
+node_modules/
+prisma/
+.codex

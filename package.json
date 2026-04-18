@@ -1,0 +1,21 @@
+{
+  "name": "todo-electron-app",
+  "version": "1.0.0",
+  "main": "main/main.js",
+  "type": "module",
+  "scripts": {
+    "start": "electron .",
+    "dev": "nodemon main/main.js",
+    "build": "electron-builder"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.0.0",
+    "dayjs": "^1.11.0",
+    "node-cron": "^3.0.0"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "prisma": "^5.0.0",
+    "electron-builder": "^24.0.0"
+  }
+}
