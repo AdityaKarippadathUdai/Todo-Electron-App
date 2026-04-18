@@ -9,12 +9,15 @@ const overdueCount = document.getElementById('overdueCount');
 const upcomingCount = document.getElementById('upcomingCount');
 const reminderBanner = document.getElementById('reminderBanner');
 const todayTasks = document.getElementById('todayTasks');
+const toast = document.getElementById('toast');
 
 const REMINDER_POLL_MS = 60_000;
-const REMINDER_HIGHLIGHT_MS = 12_000;
+const REMINDER_HIGHLIGHT_MS = 3_000;
+const SNOOZE_MINUTES = 10;
 const reminderHighlightTimers = new Map();
 let lastReminderCheckAt = new Date();
 let bannerTimer = null;
+let toastTimer = null;
 let allTasksCache = [];
 const taskFilterMemo = {
   source: null,
@@ -303,20 +306,19 @@ async function requestDesktopNotificationPermission() {
 }
 
 function triggerReminder(task) {
-  const scheduleLabel = formatTaskSchedule(task);
-  const message = `${task.title} is due ${scheduleLabel ? `now (${scheduleLabel})` : 'now'}.`;
+  const message = `⏰ Task Reminder: ${task.title}`;
 
   if ('Notification' in window && Notification.permission === 'granted') {
     new Notification('Task Reminder', {
       body: message,
       silent: true
     });
-  } else {
-    showReminderBanner(message);
   }
 
+  showReminderBanner(message);
+  showToast(message);
   playReminderSound();
-  highlightTask(task.id);
+  highlightTask(task.id, { scroll: true });
 }
 
 function showReminderBanner(message) {
@@ -366,12 +368,42 @@ function playReminderSound() {
   };
 }
 
-function highlightTask(taskId) {
+function highlightTask(taskId, options = {}) {
+  const { scroll = false } = options;
   const taskItem = list.querySelector(`[data-task-id="${CSS.escape(taskId)}"]`);
   const widgetItem = todayTasks.querySelector(`[data-task-id="${CSS.escape(taskId)}"]`);
+  const selectedDateKey = normalizeDateKey(datePicker.value);
+  const task = getTaskById(taskId);
 
+  if (task && selectedDateKey !== getTaskDateKey(task)) {
+    datePicker.value = getTaskDateKey(task);
+    updateSelectedDateLabel(datePicker.value);
+    loadTasks().then(() => {
+      const refreshedTaskItem = list.querySelector(`[data-task-id="${CSS.escape(taskId)}"]`);
+      applyReminderHighlight(taskId, refreshedTaskItem, widgetItem, scroll);
+    }).catch((err) => {
+      console.error('Scroll highlight failed:', err);
+    });
+    return;
+  }
+
+  applyReminderHighlight(taskId, taskItem, widgetItem, scroll);
+}
+
+function applyReminderHighlight(taskId, taskItem, widgetItem, shouldScroll) {
   if (taskItem) {
     taskItem.classList.add('is-reminded');
+  }
+
+  if (widgetItem) {
+    widgetItem.classList.add('is-reminded');
+  }
+
+  if (shouldScroll && taskItem) {
+    taskItem.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center'
+    });
   }
 
   if (reminderHighlightTimers.has(taskId)) {
@@ -389,10 +421,6 @@ function highlightTask(taskId) {
 
     reminderHighlightTimers.delete(taskId);
   }, REMINDER_HIGHLIGHT_MS);
-
-  if (widgetItem) {
-    widgetItem.classList.add('is-reminded');
-  }
 
   reminderHighlightTimers.set(taskId, timerId);
 }
@@ -412,6 +440,7 @@ function renderTodayWidget(tasks) {
     const item = document.createElement('article');
     item.className = 'widget-item';
     item.dataset.taskId = task.id;
+    item.addEventListener('click', () => focusTaskFromWidget(task.id));
 
     const copy = document.createElement('div');
     copy.className = 'widget-copy';
@@ -424,22 +453,227 @@ function renderTodayWidget(tasks) {
     time.className = 'widget-time';
     time.textContent = task.dueTime ? formatTimeLabel(task.dueTime) : 'Any time';
 
+    const actions = document.createElement('div');
+    actions.className = 'widget-actions';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'widget-checkbox';
+    checkbox.checked = task.completed;
+    checkbox.setAttribute('aria-label', `Mark ${task.title} complete`);
+    checkbox.addEventListener('click', (event) => {
+      event.stopPropagation();
+    });
+    checkbox.addEventListener('change', () => {
+      handleWidgetToggle(task.id);
+    });
+
+    const snoozeBtn = document.createElement('button');
+    snoozeBtn.type = 'button';
+    snoozeBtn.className = 'widget-snooze';
+    snoozeBtn.textContent = 'Snooze';
+    snoozeBtn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      handleWidgetSnooze(task.id);
+    });
+
     const status = document.createElement('span');
     status.className = 'widget-status';
     status.setAttribute('aria-hidden', 'true');
 
     copy.appendChild(title);
     copy.appendChild(time);
+    actions.appendChild(checkbox);
+    actions.appendChild(snoozeBtn);
+    actions.appendChild(status);
     item.appendChild(copy);
-    item.appendChild(status);
+    item.appendChild(actions);
     todayTasks.appendChild(item);
   });
+}
+
+async function handleWidgetToggle(taskId) {
+  const task = getTaskById(taskId);
+
+  if (!task) {
+    return;
+  }
+
+  const previousTask = { ...task };
+  task.completed = !task.completed;
+  patchTaskInDom(task);
+  refreshDerivedViews();
+
+  try {
+    await window.api.toggleTask(taskId);
+  } catch (err) {
+    Object.assign(task, previousTask);
+    patchTaskInDom(task);
+    refreshDerivedViews();
+    console.error('Widget toggle failed:', err);
+  }
+}
+
+async function handleWidgetSnooze(taskId) {
+  const task = getTaskById(taskId);
+
+  if (!task) {
+    return;
+  }
+
+  const previousTask = { ...task };
+  applySnoozeToTask(task, SNOOZE_MINUTES);
+  patchTaskInDom(task);
+  refreshDerivedViews();
+  showToast(`⏰ Task Reminder: ${task.title} snoozed for ${SNOOZE_MINUTES} minutes`);
+
+  try {
+    const updatedTask = await window.api.snoozeTask(taskId, SNOOZE_MINUTES);
+    replaceTaskInCache(updatedTask);
+    patchTaskInDom(updatedTask);
+    refreshDerivedViews();
+  } catch (err) {
+    replaceTaskInCache(previousTask);
+    patchTaskInDom(previousTask);
+    refreshDerivedViews();
+    console.error('Snooze failed:', err);
+  }
+}
+
+function focusTaskFromWidget(taskId) {
+  highlightTask(taskId, { scroll: true });
+}
+
+function showToast(message) {
+  if (!toast) {
+    return;
+  }
+
+  toast.textContent = message;
+  toast.hidden = false;
+  toast.classList.add('is-visible');
+
+  if (toastTimer) {
+    window.clearTimeout(toastTimer);
+  }
+
+  toastTimer = window.setTimeout(() => {
+    toast.classList.remove('is-visible');
+    toastTimer = window.setTimeout(() => {
+      toast.hidden = true;
+    }, 220);
+  }, 3600);
 }
 
 function updateTaskSummary() {
   const { overdueTasks, upcomingTasks } = getTaskCollections(allTasksCache);
   overdueCount.textContent = `${overdueTasks.length} overdue`;
   upcomingCount.textContent = `${upcomingTasks.length} upcoming`;
+}
+
+function refreshDerivedViews() {
+  taskFilterMemo.source = null;
+  updateTaskSummary();
+  loadTodayWidget();
+}
+
+function getTaskById(taskId) {
+  return allTasksCache.find((task) => task.id === taskId) ?? null;
+}
+
+function replaceTaskInCache(updatedTask) {
+  const index = allTasksCache.findIndex((task) => task.id === updatedTask.id);
+
+  if (index === -1) {
+    allTasksCache.push(updatedTask);
+    return;
+  }
+
+  allTasksCache[index] = updatedTask;
+}
+
+function patchTaskInDom(task) {
+  const taskItem = list.querySelector(`[data-task-id="${CSS.escape(task.id)}"]`);
+
+  if (taskItem && normalizeDateKey(datePicker.value) === getTaskDateKey(task)) {
+    const text = taskItem.querySelector('.task-text');
+    const date = taskItem.querySelector('.task-date');
+    const checkbox = taskItem.querySelector('.task-checkbox');
+
+    if (text) {
+      text.textContent = task.title;
+      text.className = `task-text${task.completed ? ' is-complete' : ''}`;
+    }
+
+    if (date) {
+      date.textContent = formatTaskSchedule(task);
+    }
+
+    if (checkbox) {
+      checkbox.checked = task.completed;
+    }
+  } else if (taskItem) {
+    taskItem.remove();
+  }
+
+  syncVisibleTaskListState();
+}
+
+function applySnoozeToTask(task, minutes) {
+  const nextSchedule = getSnoozedTaskSchedule(task, minutes);
+  task.dueDate = nextSchedule.dueDate;
+  task.dueTime = nextSchedule.dueTime;
+  task.notified = false;
+}
+
+function getSnoozedTaskSchedule(task, minutes) {
+  const base = task.dueTime ? getTaskScheduleDate(task) : new Date();
+  const next = new Date(base.getTime() + minutes * 60 * 1000);
+
+  return {
+    dueDate: new Date(
+      next.getFullYear(),
+      next.getMonth(),
+      next.getDate(),
+      0,
+      0,
+      0,
+      0
+    ).toISOString(),
+    dueTime: `${String(next.getHours()).padStart(2, '0')}:${String(next.getMinutes()).padStart(2, '0')}`
+  };
+}
+
+function getTaskScheduleDate(task) {
+  const [year, month, day] = getTaskDateKey(task).split('-').map(Number);
+  const [hours, minutes] = String(task.dueTime ?? '00:00').split(':').map(Number);
+  return new Date(year, month - 1, day, hours, minutes, 0, 0);
+}
+
+function syncVisibleTaskListState() {
+  const visibleTasks = getTasksForDate(allTasksCache, datePicker.value);
+  const hasRenderedTask = Boolean(list.querySelector('.task-item'));
+  const emptyState = list.querySelector('.empty-state');
+
+  taskCount.textContent = `${visibleTasks.length} ${visibleTasks.length === 1 ? 'task' : 'tasks'}`;
+
+  if (visibleTasks.length === 0 && !emptyState) {
+    const nextEmptyState = document.createElement('li');
+    nextEmptyState.className = 'empty-state';
+    nextEmptyState.textContent = 'No tasks scheduled for this date yet.';
+    list.appendChild(nextEmptyState);
+    return;
+  }
+
+  if (visibleTasks.length > 0 && emptyState) {
+    emptyState.remove();
+  }
+
+  if (!hasRenderedTask && visibleTasks.length > 0) {
+    loadTasks().catch((err) => {
+      console.error('Visible task sync failed:', err);
+    });
+  }
 }
 
 function compareTasksByDueTime(a, b) {

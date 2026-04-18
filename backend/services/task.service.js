@@ -51,6 +51,25 @@ export async function toggleTask(id) {
   });
 }
 
+export async function snoozeTask(id, minutes = 10) {
+  const task = await prisma.task.findUnique({ where: { id } });
+
+  if (!task) {
+    throw new Error('Task not found.');
+  }
+
+  const nextSchedule = getSnoozedSchedule(task, minutes);
+
+  return prisma.task.update({
+    where: { id },
+    data: {
+      dueDate: nextSchedule.dueDate,
+      dueTime: nextSchedule.dueTime,
+      notified: false
+    }
+  });
+}
+
 export async function deleteTask(id) {
   return prisma.task.delete({ where: { id } });
 }
@@ -182,6 +201,36 @@ function combineSchedule(dueDate, dueTime) {
   const [hours, minutes] = dueTime.split(':').map(Number);
   scheduledAt.setHours(hours, minutes, 0, 0);
   return scheduledAt;
+}
+
+function getSnoozedSchedule(task, minutes) {
+  const increment = Number(minutes);
+
+  if (!Number.isFinite(increment) || increment <= 0) {
+    throw new Error('Invalid snooze duration.');
+  }
+
+  const baseSchedule = task.dueTime
+    ? combineSchedule(task.dueDate, task.dueTime)
+    : new Date();
+
+  const nextSchedule = new Date(baseSchedule.getTime() + increment * 60 * 1000);
+
+  return {
+    dueDate: new Date(
+      nextSchedule.getFullYear(),
+      nextSchedule.getMonth(),
+      nextSchedule.getDate(),
+      0,
+      0,
+      0,
+      0
+    ),
+    dueTime: [
+      String(nextSchedule.getHours()).padStart(2, '0'),
+      String(nextSchedule.getMinutes()).padStart(2, '0')
+    ].join(':')
+  };
 }
 
 function getDayRange(value) {

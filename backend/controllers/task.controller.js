@@ -5,6 +5,7 @@ import {
   getTasksByDate,
   getDueTasksForReminder,
   markTasksNotified,
+  snoozeTask as snoozeTaskById,
   toggleTask as toggleTaskById
 } from '../services/task.service.js';
 
@@ -26,6 +27,10 @@ export async function toggleTask(id) {
 
 export async function deleteTask(id) {
   return deleteTaskById(id);
+}
+
+export async function snoozeTask(id, minutes) {
+  return snoozeTaskById(id, minutes);
 }
 
 export async function getDueReminders(windowStart, windowEnd) {
