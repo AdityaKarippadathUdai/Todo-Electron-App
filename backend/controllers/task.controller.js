@@ -1,11 +1,16 @@
 import {
   createTask,
   deleteTask as deleteTaskById,
+  getAllTasks as getAllTasksFromService,
   getTasksByDate,
   getDueTasksForReminder,
   markTasksNotified,
   toggleTask as toggleTaskById
 } from '../services/task.service.js';
+
+export async function getAllTasks() {
+  return getAllTasksFromService();
+}
 
 export async function getTasks(date) {
   return getTasksByDate(date);

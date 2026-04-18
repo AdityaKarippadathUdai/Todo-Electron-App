@@ -2,6 +2,16 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+export async function getAllTasks() {
+  return prisma.task.findMany({
+    orderBy: [
+      { dueDate: 'asc' },
+      { dueTime: 'asc' },
+      { createdAt: 'asc' }
+    ]
+  });
+}
+
 export async function getTasksByDate(date) {
   const { start, end } = getDayRange(date);
 

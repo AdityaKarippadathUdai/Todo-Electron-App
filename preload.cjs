@@ -21,6 +21,7 @@ async function withController(methodName, ...args) {
 
 contextBridge.exposeInMainWorld('api', {
   ready: () => controllerPromise.then(() => true),
+  getAllTasks: () => withController('getAllTasks'),
   getTasks: (date) => withController('getTasks', date),
   addTask: (task) => withController('addTask', task),
   getDueReminders: (windowStart, windowEnd) => withController('getDueReminders', windowStart, windowEnd),

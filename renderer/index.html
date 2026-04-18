@@ -25,44 +25,48 @@
         <div class="status-panel">
           <span class="status-label">Selected Date</span>
           <span class="status-value" id="selectedDateLabel">Today</span>
+          <span class="status-label" id="overdueCount">0 overdue</span>
+          <span class="status-label" id="upcomingCount">0 upcoming</span>
         </div>
       </div>
 
-      <div class="controls-card">
-        <div class="field-group">
-          <label for="datePicker">Due date</label>
-          <input type="date" id="datePicker" />
-        </div>
-
-        <div class="field-group">
-          <label for="timePicker">Due time</label>
-          <input type="time" id="timePicker" />
-        </div>
-
-        <div class="field-group task-field">
-          <label for="taskInput">Task</label>
-          <input type="text" id="taskInput" placeholder="Add a new task..." />
-        </div>
-
-        <button id="addBtn">Add Task</button>
-      </div>
-
-      <div id="reminderBanner" class="reminder-banner" aria-live="polite" hidden></div>
-
-      <div class="dashboard-grid">
-        <section class="tasks-section">
-          <div class="section-header">
-            <div>
-              <h2>Tasks</h2>
-              <p class="section-copy">Track what needs attention and mark progress in one place.</p>
+      <div class="dashboard-layout">
+        <section class="main-section">
+          <div class="controls-card">
+            <div class="field-group">
+              <label for="datePicker">Due date</label>
+              <input type="date" id="datePicker" />
             </div>
-            <span class="task-count" id="taskCount">0 tasks</span>
+
+            <div class="field-group">
+              <label for="timePicker">Due time</label>
+              <input type="time" id="timePicker" />
+            </div>
+
+            <div class="field-group task-field">
+              <label for="taskInput">Task</label>
+              <input type="text" id="taskInput" placeholder="Add a new task..." />
+            </div>
+
+            <button id="addBtn">Add Task</button>
           </div>
 
-          <ul id="taskList" class="task-list"></ul>
+          <div id="reminderBanner" class="reminder-banner" aria-live="polite" hidden></div>
+
+          <section class="tasks-section">
+            <div class="section-header">
+              <div>
+                <h2>Tasks</h2>
+                <p class="section-copy">Track what needs attention and mark progress in one place.</p>
+              </div>
+              <span class="task-count" id="taskCount">0 tasks</span>
+            </div>
+
+            <ul id="taskList" class="task-list"></ul>
+          </section>
         </section>
 
-        <aside class="widget-panel">
+        <aside class="sidebar">
           <section class="widget-card today-widget">
             <div class="widget-header">
               <div>
@@ -72,6 +76,17 @@
             </div>
 
             <div id="todayTasks" class="widget-list"></div>
+          </section>
+
+          <section class="widget-card extension-widget">
+            <div class="widget-header">
+              <div>
+                <h2>More Widgets</h2>
+                <p class="section-copy">Reserved space for calendar, insights, and productivity tools.</p>
+              </div>
+            </div>
+
+            <div class="widget-empty">Future extension space</div>
           </section>
         </aside>
       </div>

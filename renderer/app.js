@@ -5,6 +5,8 @@ const addBtn = document.getElementById('addBtn');
 const taskInput = document.getElementById('taskInput');
 const taskCount = document.getElementById('taskCount');
 const selectedDateLabel = document.getElementById('selectedDateLabel');
+const overdueCount = document.getElementById('overdueCount');
+const upcomingCount = document.getElementById('upcomingCount');
 const reminderBanner = document.getElementById('reminderBanner');
 const todayTasks = document.getElementById('todayTasks');
 
@@ -13,15 +15,19 @@ const REMINDER_HIGHLIGHT_MS = 12_000;
 const reminderHighlightTimers = new Map();
 let lastReminderCheckAt = new Date();
 let bannerTimer = null;
+let allTasksCache = [];
+const taskFilterMemo = {
+  source: null,
+  todayKey: '',
+  result: null
+};
 
 const today = new Date().toISOString().split('T')[0];
 datePicker.value = today;
 updateSelectedDateLabel(today);
 
 window.onload = () => {
-  loadTasks();
-  loadTodayWidget();
-  initializeReminderSystem();
+  initializeApp();
 };
 
 addBtn.addEventListener('click', addTask);
@@ -36,7 +42,7 @@ async function loadTasks() {
   updateSelectedDateLabel(date);
 
   try {
-    const tasks = await window.api.getTasks(date);
+    const tasks = getTasksForDate(allTasksCache, date);
     list.innerHTML = '';
     taskCount.textContent = `${tasks.length} ${tasks.length === 1 ? 'task' : 'tasks'}`;
 
@@ -98,19 +104,9 @@ async function loadTasks() {
   }
 }
 
-async function loadTodayWidget() {
-  const todayDate = new Date().toISOString().split('T')[0];
-
-  try {
-    const tasks = await window.api.getTasks(todayDate);
-    const pendingTodayTasks = tasks
-      .filter((task) => !task.completed)
-      .sort(compareTasksByDueTime);
-
-    renderTodayWidget(pendingTodayTasks);
-  } catch (err) {
-    console.error('Today widget load failed:', err);
-  }
+function loadTodayWidget() {
+  const { todayTasks: pendingTodayTasks } = getTaskCollections(allTasksCache);
+  renderTodayWidget(pendingTodayTasks);
 }
 
 async function addTask() {
@@ -142,8 +138,9 @@ async function addTask() {
     taskInput.value = '';
     timePicker.value = '';
 
+    await refreshAllTasks();
     await loadTasks();
-    await loadTodayWidget();
+    loadTodayWidget();
 
   } catch (err) {
     console.error('Add failed:', err);
@@ -153,8 +150,9 @@ async function addTask() {
 async function toggle(id) {
   try {
     await window.api.toggleTask(id);
+    await refreshAllTasks();
     await loadTasks();
-    await loadTodayWidget();
+    loadTodayWidget();
   } catch (err) {
     console.error('Toggle failed:', err);
   }
@@ -163,8 +161,9 @@ async function toggle(id) {
 async function removeTask(id) {
   try {
     await window.api.deleteTask(id);
+    await refreshAllTasks();
     await loadTasks();
-    await loadTodayWidget();
+    loadTodayWidget();
   } catch (err) {
     console.error('Delete failed:', err);
   }
@@ -242,6 +241,24 @@ async function initializeReminderSystem() {
   await requestDesktopNotificationPermission();
   await checkDueReminders();
   window.setInterval(checkDueReminders, REMINDER_POLL_MS);
+}
+
+async function initializeApp() {
+  try {
+    await refreshAllTasks();
+    await loadTasks();
+    loadTodayWidget();
+  } catch (err) {
+    console.error('App initialization failed:', err);
+  }
+
+  initializeReminderSystem();
+}
+
+async function refreshAllTasks() {
+  allTasksCache = await window.api.getAllTasks();
+  taskFilterMemo.source = null;
+  updateTaskSummary();
 }
 
 async function checkDueReminders() {
@@ -419,6 +436,12 @@ function renderTodayWidget(tasks) {
   });
 }
 
+function updateTaskSummary() {
+  const { overdueTasks, upcomingTasks } = getTaskCollections(allTasksCache);
+  overdueCount.textContent = `${overdueTasks.length} overdue`;
+  upcomingCount.textContent = `${upcomingTasks.length} upcoming`;
+}
+
 function compareTasksByDueTime(a, b) {
   const aTime = a.dueTime ?? '99:99';
   const bTime = b.dueTime ?? '99:99';
@@ -428,4 +451,96 @@ function compareTasksByDueTime(a, b) {
   }
 
   return aTime.localeCompare(bTime);
+}
+
+function getTodayTasks(tasks) {
+  const todayKey = getTodayKey();
+
+  return tasks.filter((task) => {
+    return !task.completed && getTaskDateKey(task) === todayKey;
+  });
+}
+
+function getUpcomingTasks(tasks) {
+  const todayKey = getTodayKey();
+
+  return tasks.filter((task) => {
+    return getTaskDateKey(task) > todayKey;
+  });
+}
+
+function getOverdueTasks(tasks) {
+  const todayKey = getTodayKey();
+
+  return tasks.filter((task) => {
+    return !task.completed && getTaskDateKey(task) < todayKey;
+  });
+}
+
+function getTaskCollections(tasks) {
+  const todayKey = getTodayKey();
+
+  if (taskFilterMemo.source === tasks && taskFilterMemo.todayKey === todayKey && taskFilterMemo.result) {
+    return taskFilterMemo.result;
+  }
+
+  const result = {
+    todayTasks: getTodayTasks(tasks).sort(compareTasksByDueTime),
+    upcomingTasks: getUpcomingTasks(tasks).sort(compareTasksBySchedule),
+    overdueTasks: getOverdueTasks(tasks).sort(compareTasksBySchedule)
+  };
+
+  taskFilterMemo.source = tasks;
+  taskFilterMemo.todayKey = todayKey;
+  taskFilterMemo.result = result;
+
+  return result;
+}
+
+function getTasksForDate(tasks, dateValue) {
+  const dateKey = normalizeDateKey(dateValue);
+
+  return tasks
+    .filter((task) => getTaskDateKey(task) === dateKey)
+    .sort(compareTasksBySchedule);
+}
+
+function compareTasksBySchedule(a, b) {
+  const dateCompare = getTaskDateKey(a).localeCompare(getTaskDateKey(b));
+
+  if (dateCompare !== 0) {
+    return dateCompare;
+  }
+
+  return compareTasksByDueTime(a, b);
+}
+
+function getTaskDateKey(task) {
+  return normalizeDateKey(task?.dueDate);
+}
+
+function getTodayKey() {
+  return normalizeDateKey(new Date());
+}
+
+function normalizeDateKey(value) {
+  if (!value) {
+    return '';
+  }
+
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return value;
+  }
+
+  const date = value instanceof Date ? new Date(value) : new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
 }
