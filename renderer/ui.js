@@ -163,7 +163,6 @@ export function createUIController(store) {
   }
 
   function render(state) {
-    const todayKey = state.ui.selectedDate ? state.ui.selectedDate : formatTaskDate(new Date());
     const collections = selectCollections(state.tasks.items);
     const visibleTasks = getTasksForDate(state.tasks.items, state.ui.selectedDate);
     const todayProgress = getTodayProgress(state.tasks.items);
@@ -293,7 +292,6 @@ export function createUIController(store) {
       }
     });
   }
-  }
 
   function renderEmptyTaskState() {
     return `
@@ -326,10 +324,11 @@ export function createUIController(store) {
   }
 
   function escapeHtml(value) {
-  return String(value)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
+    return String(value)
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  }
 }

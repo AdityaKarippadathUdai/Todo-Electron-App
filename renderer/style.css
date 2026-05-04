@@ -211,7 +211,8 @@ h2 {
 
 #taskInput,
 #datePicker,
-#timePicker {
+#timePicker,
+#priorityPicker {
   width: 100%;
   border: 0;
   border-radius: 8px;
@@ -229,7 +230,8 @@ h2 {
 
 #taskInput:focus,
 #datePicker:focus,
-#timePicker:focus {
+#timePicker:focus,
+#priorityPicker:focus {
   box-shadow:
     0 0 0 1px rgba(59, 130, 246, 0.95),
     0 0 0 4px rgba(59, 130, 246, 0.18),
@@ -343,12 +345,14 @@ h2 {
 }
 
 .widget-item {
+  --priority-color: rgba(156, 163, 175, 0.85);
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 14px;
   cursor: pointer;
   transition: transform 0.2s ease, border-color 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+  border-left: 4px solid var(--priority-color);
 }
 
 .widget-item:hover {
@@ -358,7 +362,7 @@ h2 {
 }
 
 .widget-item.is-reminded {
-  border: 2px solid var(--accent);
+  border-color: rgba(59, 130, 246, 0.4);
   box-shadow:
     0 0 0 1px rgba(59, 130, 246, 0.18),
     0 0 24px rgba(59, 130, 246, 0.22),
@@ -382,6 +386,13 @@ h2 {
 .widget-time {
   color: var(--text-secondary);
   font-size: 0.82rem;
+}
+
+.widget-priority {
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .widget-status {
@@ -512,10 +523,12 @@ h2 {
 }
 
 .task-item {
+  --priority-color: rgba(156, 163, 175, 0.85);
   gap: 16px;
   padding: 14px 16px;
   border: 1px solid var(--border);
   border-radius: 10px;
+  border-left: 4px solid var(--priority-color);
   box-shadow: var(--shadow-md);
   margin-bottom: 14px;
   opacity: 1;
@@ -533,7 +546,7 @@ h2 {
 }
 
 .task-item.is-reminded {
-  border: 2px solid var(--accent);
+  border-color: rgba(59, 130, 246, 0.4);
   box-shadow:
     0 0 0 1px rgba(59, 130, 246, 0.2),
     0 0 28px rgba(59, 130, 246, 0.22),
@@ -613,6 +626,13 @@ h2 {
   transition: opacity 0.2s ease, color 0.2s ease;
 }
 
+.task-priority {
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
 .delete-btn {
   width: 38px;
   height: 38px;
@@ -635,6 +655,112 @@ h2 {
   border: 1px dashed var(--border);
   border-radius: var(--radius-md);
   color: var(--text-secondary);
+}
+
+.empty-state-card {
+  display: grid;
+  place-items: center;
+  gap: 16px;
+  padding: 32px 24px;
+  text-align: center;
+  background:
+    radial-gradient(circle at top, rgba(59, 130, 246, 0.08), transparent 55%),
+    var(--surface);
+  border: 1px solid rgba(59, 130, 246, 0.16);
+  border-radius: 14px;
+  box-shadow: var(--shadow-md);
+}
+
+.empty-state-icon {
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  color: #93c5fd;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.12);
+  box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.06);
+}
+
+.empty-state-icon svg {
+  width: 42px;
+  height: 42px;
+}
+
+.empty-state-copy {
+  display: grid;
+  gap: 8px;
+}
+
+.empty-state-copy h3 {
+  margin: 0;
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.empty-state-copy p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.empty-state-actions {
+  display: grid;
+  gap: 12px;
+  width: min(100%, 420px);
+}
+
+.empty-state-cta,
+.empty-state-suggestion {
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+
+.empty-state-cta {
+  padding: 12px 18px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 14px 28px rgba(59, 130, 246, 0.26);
+}
+
+.empty-state-cta:hover,
+.empty-state-suggestion:hover {
+  transform: translateY(-1px);
+}
+
+.empty-state-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.empty-state-suggestion {
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.empty-state-suggestion:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.task-item[data-priority="low"],
+.widget-item[data-priority="low"] {
+  --priority-color: rgba(156, 163, 175, 0.9);
+}
+
+.task-item[data-priority="medium"],
+.widget-item[data-priority="medium"] {
+  --priority-color: rgba(245, 158, 11, 0.95);
+}
+
+.task-item[data-priority="high"],
+.widget-item[data-priority="high"] {
+  --priority-color: rgba(239, 68, 68, 0.95);
 }
 
 @keyframes focusGlow {
