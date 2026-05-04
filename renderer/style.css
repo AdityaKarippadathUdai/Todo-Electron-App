@@ -22,13 +22,24 @@ body {
   margin: 0;
   min-height: 100vh;
   font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  background: var(--bg);
+  background:
+    radial-gradient(circle at top left, rgba(59, 130, 246, 0.12), transparent 26%),
+    radial-gradient(circle at top right, rgba(245, 158, 11, 0.08), transparent 24%),
+    linear-gradient(180deg, #0f1117 0%, #121212 50%, #0e0e10 100%);
   color: var(--text-primary);
 }
 
 button,
 input {
   font: inherit;
+}
+
+button {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+}
+
+button:active {
+  transform: scale(0.98);
 }
 
 .app-shell {
@@ -39,13 +50,17 @@ input {
 .dashboard-card {
   width: min(100%, 1280px);
   margin: 0 auto;
-  background: var(--bg);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(18, 18, 18, 0.84);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  padding: 20px;
+  box-shadow:
+    0 30px 90px rgba(0, 0, 0, 0.46),
+    inset 0 1px 0 rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 22px;
   display: grid;
-  gap: 20px;
+  gap: 24px;
 }
 
 .dashboard-header,
@@ -96,11 +111,12 @@ h1 {
   font-size: clamp(2.2rem, 5vw, 2.9rem);
   line-height: 1.1;
   font-weight: 700;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.045em;
 }
 
 h2 {
   font-size: 1.2rem;
+  letter-spacing: -0.025em;
 }
 
 .subtitle,
@@ -114,6 +130,7 @@ h2 {
 .subtitle,
 .section-copy {
   margin-top: 10px;
+  line-height: 1.55;
 }
 
 .status-panel,
@@ -185,18 +202,40 @@ h2 {
 }
 
 .controls-card {
-  gap: 16px;
+  position: relative;
+  gap: 18px;
   align-items: end;
   flex-wrap: wrap;
   padding: 18px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  box-shadow:
+    0 18px 42px rgba(0, 0, 0, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.controls-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.5), rgba(37, 99, 235, 0.08), rgba(245, 158, 11, 0.18));
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.75;
 }
 
 .field-group {
   display: grid;
-  gap: 8px;
+  gap: 10px;
   flex: 1 1 180px;
 }
 
@@ -204,21 +243,57 @@ h2 {
   flex: 2 1 280px;
 }
 
-.field-group label {
+.field-group > label {
   color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
-#taskInput,
-#datePicker,
-#timePicker {
+.floating-field {
+  position: relative;
+}
+
+.input-shell {
+  position: relative;
+  display: grid;
+  align-items: center;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.28), rgba(255, 255, 255, 0.03));
+  padding: 1px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.02);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.16), transparent 55%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.input-shell:focus-within::before,
+.input-shell.has-value::before {
+  opacity: 1;
+}
+
+.input-shell:focus-within {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.16), 0 0 22px rgba(59, 130, 246, 0.12);
+}
+
+.input-shell input {
+  position: relative;
+  z-index: 1;
   width: 100%;
   border: 0;
-  border-radius: 8px;
   color: var(--text-primary);
-  padding: 11px 12px;
+  background: rgba(30, 30, 30, 0.92);
+  border-radius: 13px;
+  padding: 22px 14px 10px 42px;
   outline: none;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
   transition:
     box-shadow 0.2s ease,
     background-color 0.2s ease,
@@ -227,18 +302,89 @@ h2 {
     border-color 0.2s ease;
   appearance: none;
   -webkit-appearance: none;
-  background-color: var(--surface);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   color-scheme: dark;
 }
 
-#taskInput,
-#datePicker,
-#timePicker {
-  background: var(--surface);
+.input-shell input::placeholder {
+  color: transparent;
 }
 
-.priority-field {
-  --priority-color: rgba(245, 158, 11, 0.95);
+.input-shell input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.72;
+  filter: invert(0.9);
+}
+
+.input-shell input::-webkit-inner-spin-button,
+.input-shell input::-webkit-clear-button {
+  display: none;
+}
+
+.floating-label {
+  position: absolute;
+  left: 42px;
+  top: 50%;
+  z-index: 2;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  transform: translateY(-50%);
+  transition:
+    transform 0.18s ease,
+    font-size 0.18s ease,
+    color 0.18s ease,
+    opacity 0.18s ease;
+  pointer-events: none;
+}
+
+.input-shell:focus-within .floating-label,
+.input-shell.has-value .floating-label {
+  transform: translateY(-17px);
+  font-size: 0.75rem;
+  color: #dbeafe;
+  opacity: 0.95;
+}
+
+.input-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  z-index: 2;
+  width: 18px;
+  height: 18px;
+  transform: translateY(-50%);
+  color: rgba(156, 163, 175, 0.9);
+  pointer-events: none;
+  opacity: 0.95;
+}
+
+.input-shell-date .input-icon {
+  background:
+    linear-gradient(currentColor, currentColor) 50% 30% / 12px 2px no-repeat,
+    linear-gradient(currentColor, currentColor) 50% 68% / 12px 2px no-repeat,
+    linear-gradient(currentColor, currentColor) 28% 42% / 2px 8px no-repeat,
+    linear-gradient(currentColor, currentColor) 72% 42% / 2px 8px no-repeat,
+    linear-gradient(currentColor, currentColor) 50% 50% / 14px 12px no-repeat;
+  border-radius: 4px;
+}
+
+.input-shell-time .input-icon {
+  background:
+    radial-gradient(circle at 50% 50%, currentColor 0 1.5px, transparent 2px),
+    linear-gradient(currentColor, currentColor) 50% 50% / 2px 6px no-repeat,
+    linear-gradient(currentColor, currentColor) 50% 50% / 5px 2px no-repeat;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1.5px currentColor;
+}
+
+.input-shell-task .input-icon,
+.input-shell-quick .input-icon {
+  background:
+    linear-gradient(currentColor, currentColor) 50% 28% / 12px 2px no-repeat,
+    linear-gradient(currentColor, currentColor) 50% 50% / 12px 2px no-repeat,
+    linear-gradient(currentColor, currentColor) 50% 72% / 8px 2px no-repeat,
+    linear-gradient(currentColor, currentColor) 24% 28% / 2px 2px no-repeat;
 }
 
 .priority-selector {
@@ -347,20 +493,28 @@ h2 {
 #addBtn {
   align-self: end;
   min-width: 132px;
-  padding: 11px 18px;
-  background: var(--accent);
+  padding: 12px 18px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: #fff;
   font-weight: 600;
-  box-shadow: 0 12px 24px rgba(59, 130, 246, 0.28);
+  box-shadow:
+    0 14px 28px rgba(37, 99, 235, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 #addBtn:hover {
-  background: #60a5fa;
+  transform: translateY(-1px) scale(1.01);
+  box-shadow:
+    0 18px 32px rgba(37, 99, 235, 0.42),
+    0 0 0 1px rgba(59, 130, 246, 0.25),
+    0 0 24px rgba(59, 130, 246, 0.2);
 }
 
-#addBtn:hover,
-.delete-btn:hover,
-.task-item:hover {
+.delete-btn:hover {
   transform: translateY(-1px);
 }
 
@@ -376,7 +530,7 @@ h2 {
 
 .dashboard-layout {
   display: flex;
-  gap: 20px;
+  gap: 24px;
   align-items: flex-start;
 }
 
@@ -392,23 +546,28 @@ h2 {
   min-width: 280px;
   align-self: stretch;
   display: grid;
-  gap: 20px;
-  padding-left: 20px;
+  gap: 18px;
+  padding-left: 24px;
   border-left: 1px solid rgba(255, 255, 255, 0.08);
-  background: #0f172a;
-  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.32), rgba(15, 23, 42, 0.16));
+  border-radius: 16px;
 }
 
 .widget-card {
   position: sticky;
   top: 20px;
   padding: 18px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
+  background: rgba(30, 30, 30, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  box-shadow:
+    0 18px 42px rgba(0, 0, 0, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
   display: grid;
   gap: 16px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .insights-widget {
@@ -426,9 +585,23 @@ h2 {
   gap: 12px;
 }
 
+.widget-card + .widget-card {
+  position: relative;
+}
+
+.widget-card + .widget-card::before {
+  content: "";
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  top: -8px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+}
+
 .quick-add-stack {
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 
 .quick-add-stack input,
@@ -438,17 +611,22 @@ h2 {
 
 .quick-add-stack button {
   border: 0;
-  border-radius: 10px;
-  padding: 11px 14px;
-  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: #fff;
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 14px 28px rgba(37, 99, 235, 0.26);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .quick-add-stack button:hover {
-  transform: translateY(-1px);
+  transform: translateY(-1px) scale(1.01);
+  box-shadow: 0 18px 34px rgba(37, 99, 235, 0.35);
 }
 
 .summary-grid {
@@ -462,8 +640,9 @@ h2 {
   gap: 6px;
   padding: 14px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
 }
 
 .summary-tile-wide {
@@ -488,24 +667,47 @@ h2 {
 }
 
 .next-task-card {
+  position: relative;
+  overflow: hidden;
   display: grid;
-  gap: 10px;
-  padding: 16px;
-  border-radius: 14px;
+  gap: 12px;
+  padding: 22px;
+  border-radius: 18px;
   background:
-    radial-gradient(circle at top right, rgba(59, 130, 246, 0.1), transparent 50%),
-    var(--surface-alt);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.22), transparent 45%),
+    radial-gradient(circle at left top, rgba(245, 158, 11, 0.12), transparent 35%),
+    rgba(30, 30, 30, 0.92);
+  border: 1px solid rgba(59, 130, 246, 0.22);
   border-left: 4px solid rgba(59, 130, 246, 0.9);
+  box-shadow:
+    0 22px 48px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(59, 130, 246, 0.1),
+    0 0 28px rgba(59, 130, 246, 0.12);
+  min-height: 170px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .next-task-card.is-empty {
   border-left-color: rgba(156, 163, 175, 0.85);
 }
 
+.next-task-card::before {
+  content: "";
+  position: absolute;
+  inset: -20% auto auto -20%;
+  width: 140px;
+  height: 140px;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.12);
+  filter: blur(24px);
+  pointer-events: none;
+}
+
 .next-task-title {
-  font-weight: 700;
-  font-size: 1.05rem;
+  font-weight: 800;
+  font-size: 1.18rem;
+  letter-spacing: -0.03em;
 }
 
 .next-task-meta,
@@ -516,17 +718,19 @@ h2 {
 
 .next-task-countdown {
   font-weight: 700;
-  color: #bfdbfe;
+  color: #dbeafe;
+  font-size: 0.95rem;
 }
 
 .next-task-card button {
   border: 0;
-  border-radius: 10px;
-  padding: 10px 14px;
-  background: rgba(59, 130, 246, 0.16);
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.22), rgba(37, 99, 235, 0.16));
   color: #dbeafe;
   font-weight: 700;
   cursor: pointer;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.16);
 }
 
 .next-task-card button:disabled {
@@ -546,14 +750,18 @@ h2 {
   align-items: start;
   padding: 14px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-left: 4px solid var(--priority-color, rgba(59, 130, 246, 0.7));
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .timeline-item:hover {
-  filter: brightness(1.05);
-  transform: translateY(-1px);
+  filter: brightness(1.06);
+  transform: translateY(-2px);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.24);
 }
 
 .timeline-dot {
@@ -826,19 +1034,33 @@ h2 {
 .task-item {
   --priority-color: rgba(156, 163, 175, 0.85);
   gap: 16px;
-  padding: 14px 16px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  padding: 16px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
   border-left: 4px solid var(--priority-color);
-  box-shadow: var(--shadow-md);
+  background: rgba(30, 30, 30, 0.82);
+  box-shadow:
+    0 18px 36px rgba(0, 0, 0, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.02);
   margin-bottom: 14px;
   opacity: 1;
-  transition: transform 0.2s ease, filter 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease,
+    border-color 0.2s ease,
+    opacity 0.2s ease,
+    box-shadow 0.2s ease;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .task-item:hover {
-  filter: brightness(1.06);
-  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-3px);
+  filter: brightness(1.08);
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.03);
 }
 
 .task-item.is-entering {
@@ -941,6 +1163,7 @@ h2 {
 .task-text.is-complete {
   text-decoration: line-through;
   opacity: 0.6;
+  transform: translateY(0);
 }
 
 .task-date {
@@ -1041,11 +1264,16 @@ h2 {
   padding: 32px 24px;
   text-align: center;
   background:
-    radial-gradient(circle at top, rgba(59, 130, 246, 0.08), transparent 55%),
-    var(--surface);
+    radial-gradient(circle at top, rgba(59, 130, 246, 0.14), transparent 45%),
+    radial-gradient(circle at bottom right, rgba(245, 158, 11, 0.08), transparent 40%),
+    rgba(30, 30, 30, 0.88);
   border: 1px solid rgba(59, 130, 246, 0.16);
-  border-radius: 14px;
-  box-shadow: var(--shadow-md);
+  border-radius: 18px;
+  box-shadow:
+    0 20px 44px rgba(0, 0, 0, 0.24),
+    0 0 28px rgba(59, 130, 246, 0.12);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .empty-state-icon {
@@ -1057,6 +1285,7 @@ h2 {
   border-radius: 999px;
   background: rgba(59, 130, 246, 0.12);
   box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.06);
+  animation: emptyIconPulse 3.4s ease-in-out infinite;
 }
 
 .empty-state-icon svg {
@@ -1096,10 +1325,10 @@ h2 {
 
 .empty-state-cta {
   padding: 12px 18px;
-  background: var(--accent);
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: #fff;
   font-weight: 700;
-  box-shadow: 0 14px 28px rgba(59, 130, 246, 0.26);
+  box-shadow: 0 16px 30px rgba(37, 99, 235, 0.3);
 }
 
 .empty-state-cta:hover,
@@ -1116,13 +1345,18 @@ h2 {
 
 .empty-state-suggestion {
   padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.05);
   color: var(--text-primary);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .empty-state-suggestion:hover {
   background: rgba(255, 255, 255, 0.08);
+}
+
+.btn-icon {
+  font-size: 0.95rem;
+  line-height: 1;
 }
 
 .task-item[data-priority="low"],
@@ -1164,6 +1398,17 @@ h2 {
 
   100% {
     transform: translateY(-1px) scale(1);
+  }
+}
+
+@keyframes emptyIconPulse {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+
+  50% {
+    transform: scale(1.05) rotate(4deg);
   }
 }
 
@@ -1215,7 +1460,7 @@ h2 {
 
 @media (max-width: 720px) {
   .dashboard-card {
-    padding: 24px;
+    padding: 18px;
   }
 
   .dashboard-layout {
@@ -1231,7 +1476,7 @@ h2 {
   .sidebar {
     min-width: 0;
     padding-left: 0;
-    padding-top: 20px;
+    padding-top: 22px;
     border-left: 0;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 0;
@@ -1247,10 +1492,28 @@ h2 {
 
   .controls-card {
     align-items: stretch;
+    gap: 14px;
+    padding: 16px;
   }
 
   #addBtn {
     width: 100%;
+  }
+
+  .priority-selector {
+    grid-template-columns: 1fr;
+  }
+
+  .input-shell input {
+    padding-left: 40px;
+  }
+
+  .floating-label {
+    left: 40px;
+  }
+
+  .task-title-row {
+    flex-direction: column;
   }
 
   .delete-btn {

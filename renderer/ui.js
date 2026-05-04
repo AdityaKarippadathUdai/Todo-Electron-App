@@ -22,6 +22,10 @@ export function createUIController(store) {
     addBtn: document.getElementById('addBtn'),
     datePicker: document.getElementById('datePicker'),
     timePicker: document.getElementById('timePicker'),
+    dateField: document.querySelector('.input-shell-date'),
+    timeField: document.querySelector('.input-shell-time'),
+    taskField: document.querySelector('.input-shell-task'),
+    quickField: document.querySelector('.input-shell-quick'),
     priorityField: document.querySelector('.priority-field'),
     prioritySelector: document.querySelector('.priority-selector'),
     priorityButtons: Array.from(document.querySelectorAll('.priority-pill')),
@@ -245,6 +249,10 @@ export function createUIController(store) {
 
     refs.datePicker.value = state.ui.selectedDate;
     refs.timePicker.value = state.ui.formTime;
+    updateFloatingField(refs.dateField, Boolean(state.ui.selectedDate));
+    updateFloatingField(refs.timeField, Boolean(state.ui.formTime));
+    updateFloatingField(refs.taskField, Boolean(state.ui.formTitle));
+    updateFloatingField(refs.quickField, Boolean(state.ui.quickTitle));
     refs.priorityField?.setAttribute('data-priority', state.ui.formPriority || 'medium');
     refs.priorityButtons.forEach((button) => {
       const isSelected = button.dataset.priority === state.ui.formPriority;
@@ -439,6 +447,14 @@ export function createUIController(store) {
   function focusTaskComposer() {
     refs.taskInput.focus();
     refs.taskInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function updateFloatingField(field, hasValue) {
+    if (!field) {
+      return;
+    }
+
+    field.classList.toggle('has-value', hasValue);
   }
 
   function escapeHtml(value) {

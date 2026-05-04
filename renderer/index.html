@@ -37,14 +37,20 @@
       <div class="dashboard-layout">
         <section class="main-section">
           <div class="controls-card">
-            <div class="field-group">
-              <label for="datePicker">Due date</label>
-              <input type="date" id="datePicker" />
+            <div class="field-group floating-field">
+              <div class="input-shell input-shell-date">
+                <span class="input-icon" aria-hidden="true"></span>
+                <label class="floating-label" for="datePicker">Due date</label>
+                <input type="date" id="datePicker" />
+              </div>
             </div>
 
-            <div class="field-group">
-              <label for="timePicker">Due time</label>
-              <input type="time" id="timePicker" />
+            <div class="field-group floating-field">
+              <div class="input-shell input-shell-time">
+                <span class="input-icon" aria-hidden="true"></span>
+                <label class="floating-label" for="timePicker">Due time</label>
+                <input type="time" id="timePicker" />
+              </div>
             </div>
 
             <div class="field-group priority-field" data-priority="medium">
@@ -56,12 +62,15 @@
               </div>
             </div>
 
-            <div class="field-group task-field">
-              <label for="taskInput">Task</label>
-              <input type="text" id="taskInput" placeholder="Add a new task..." />
+            <div class="field-group task-field floating-field">
+              <div class="input-shell input-shell-task">
+                <span class="input-icon" aria-hidden="true"></span>
+                <label class="floating-label" for="taskInput">Task</label>
+                <input type="text" id="taskInput" placeholder=" " />
+              </div>
             </div>
 
-            <button id="addBtn">Add Task</button>
+            <button id="addBtn" type="button"><span class="btn-icon" aria-hidden="true">+</span><span>Add Task</span></button>
           </div>
 
           <div id="reminderBanner" class="reminder-banner" aria-live="polite" hidden></div>
@@ -90,8 +99,12 @@
             </div>
 
             <div class="quick-add-stack">
-              <input type="text" id="quickTaskInput" placeholder="Write a task..." />
-              <button id="quickAddBtn" type="button">Quick add task</button>
+              <div class="input-shell input-shell-quick floating-field">
+                <span class="input-icon" aria-hidden="true"></span>
+                <label class="floating-label" for="quickTaskInput">Quick task</label>
+                <input type="text" id="quickTaskInput" placeholder=" " />
+              </div>
+              <button id="quickAddBtn" type="button"><span class="btn-icon" aria-hidden="true">+</span><span>Quick add task</span></button>
             </div>
           </section>
 
