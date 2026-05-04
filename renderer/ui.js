@@ -3,6 +3,7 @@ import {
   formatTaskSchedule,
   formatTimeLabel,
   formatTaskDate,
+  getPriorityLabel,
   getGreeting,
   getTasksForDate,
   getTodayProgress,
@@ -16,6 +17,7 @@ export function createUIController(store) {
     addBtn: document.getElementById('addBtn'),
     datePicker: document.getElementById('datePicker'),
     timePicker: document.getElementById('timePicker'),
+    priorityPicker: document.getElementById('priorityPicker'),
     taskInput: document.getElementById('taskInput'),
     taskCount: document.getElementById('taskCount'),
     selectedDateLabel: document.getElementById('selectedDateLabel'),
@@ -46,6 +48,9 @@ export function createUIController(store) {
     refs.timePicker.addEventListener('input', (event) => {
       store.actions.setFormTime(event.target.value);
     });
+    refs.priorityPicker.addEventListener('change', (event) => {
+      store.actions.setFormPriority(event.target.value);
+    });
     refs.taskInput.addEventListener('input', (event) => {
       store.actions.setFormTitle(event.target.value);
     });
@@ -64,6 +69,24 @@ export function createUIController(store) {
     });
 
     refs.taskList.addEventListener('click', (event) => {
+      const emptyCta = event.target.closest('.empty-state-cta');
+
+      if (emptyCta) {
+        event.preventDefault();
+        focusTaskComposer();
+        return;
+      }
+
+      const suggestion = event.target.closest('.empty-state-suggestion');
+
+      if (suggestion?.dataset.suggestion) {
+        event.preventDefault();
+        store.actions.setFormTitle(suggestion.dataset.suggestion);
+        focusTaskComposer();
+        refs.taskInput.select();
+        return;
+      }
+
       const deleteButton = event.target.closest('.delete-btn');
 
       if (deleteButton?.dataset.taskId) {
@@ -147,6 +170,7 @@ export function createUIController(store) {
 
     refs.datePicker.value = state.ui.selectedDate;
     refs.timePicker.value = state.ui.formTime;
+    refs.priorityPicker.value = state.ui.formPriority;
     refs.taskInput.value = state.ui.formTitle;
     refs.selectedDateLabel.textContent = formatTaskDate(state.ui.selectedDate);
     refs.overdueCount.textContent = `${collections.overdueTasks.length} overdue`;
@@ -185,12 +209,12 @@ export function createUIController(store) {
     refs.taskCount.textContent = `${tasks.length} ${tasks.length === 1 ? 'task' : 'tasks'}`;
 
     if (!tasks.length) {
-      refs.taskList.innerHTML = '<li class="empty-state">No tasks scheduled for this date yet.</li>';
+      refs.taskList.innerHTML = renderEmptyTaskState();
       return;
     }
 
     refs.taskList.innerHTML = tasks.map((task) => `
-      <li class="task-item${task.id === highlightedTaskId ? ' is-reminded' : ''}" data-task-id="${escapeHtml(task.id)}">
+      <li class="task-item${task.id === highlightedTaskId ? ' is-reminded' : ''}" data-task-id="${escapeHtml(task.id)}" data-priority="${escapeHtml(task.priority ?? 'medium')}">
         <div class="task-main">
           <input
             type="checkbox"
@@ -201,6 +225,7 @@ export function createUIController(store) {
           <div class="task-copy">
             <span class="task-text${task.completed ? ' is-complete' : ''}">${escapeHtml(task.title)}</span>
             <span class="task-date">${escapeHtml(formatTaskSchedule(task))}</span>
+            <span class="task-priority">${escapeHtml(getPriorityLabel(task.priority))} priority</span>
           </div>
         </div>
         <button
@@ -220,10 +245,11 @@ export function createUIController(store) {
     }
 
     refs.todayTasks.innerHTML = tasks.map((task) => `
-      <article class="widget-item${task.id === highlightedTaskId ? ' is-reminded' : ''}" data-task-id="${escapeHtml(task.id)}">
+      <article class="widget-item${task.id === highlightedTaskId ? ' is-reminded' : ''}" data-task-id="${escapeHtml(task.id)}" data-priority="${escapeHtml(task.priority ?? 'medium')}">
         <div class="widget-copy">
           <div class="widget-title">${escapeHtml(task.title)}</div>
           <div class="widget-time">${escapeHtml(isAllDaySchedule(task.dueAt) ? 'Any time' : formatTimeLabel(task.dueAt))}</div>
+          <div class="widget-priority">${escapeHtml(getPriorityLabel(task.priority))} priority</div>
         </div>
         <div class="widget-actions">
           <input
@@ -267,9 +293,39 @@ export function createUIController(store) {
       }
     });
   }
-}
+  }
 
-function escapeHtml(value) {
+  function renderEmptyTaskState() {
+    return `
+      <li class="empty-state-card">
+        <div class="empty-state-icon" aria-hidden="true">
+          <svg viewBox="0 0 64 64" role="presentation" focusable="false">
+            <path d="M16 38.5C16 27.2 24.9 18 36 18s20 9.2 20 20.5S47.1 59 36 59 16 49.8 16 38.5Z" fill="currentColor" opacity="0.08"></path>
+            <path d="M22 31l7 7 13-13" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M10 16l3-3M9 25h4M48 8l3-3M54 16h4" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
+          </svg>
+        </div>
+        <div class="empty-state-copy">
+          <h3>You're all clear for today 🎉</h3>
+          <p>Add a task to stay productive</p>
+        </div>
+        <div class="empty-state-actions">
+          <button type="button" class="empty-state-cta">➕ Add your first task</button>
+          <div class="empty-state-suggestions" aria-label="Quick suggestions">
+            <button type="button" class="empty-state-suggestion" data-suggestion="Plan your day">Plan your day</button>
+            <button type="button" class="empty-state-suggestion" data-suggestion="Set a reminder">Set a reminder</button>
+          </div>
+        </div>
+      </li>
+    `;
+  }
+
+  function focusTaskComposer() {
+    refs.taskInput.focus();
+    refs.taskInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function escapeHtml(value) {
   return String(value)
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')

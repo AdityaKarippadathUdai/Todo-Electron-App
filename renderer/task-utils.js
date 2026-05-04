@@ -31,6 +31,22 @@ export function getTaskDateKey(task) {
   return normalizeDateKey(task?.dueAt);
 }
 
+export function getTaskPriority(task) {
+  return normalizePriority(task?.priority);
+}
+
+export function getPriorityLabel(priority) {
+  switch (normalizePriority(priority)) {
+    case 'high':
+      return 'High';
+    case 'low':
+      return 'Low';
+    case 'medium':
+    default:
+      return 'Medium';
+  }
+}
+
 export function formatTaskDate(dateValue) {
   if (!dateValue) {
     return 'No due date';
@@ -67,14 +83,20 @@ export function formatTaskSchedule(task) {
 }
 
 export function compareTasksByDueTime(a, b) {
+  const priorityCompare = getPriorityRank(a?.priority) - getPriorityRank(b?.priority);
+
+  if (priorityCompare !== 0) {
+    return priorityCompare;
+  }
+
   const aTime = getScheduleTimestamp(a);
   const bTime = getScheduleTimestamp(b);
 
-  if (aTime === bTime) {
-    return new Date(a?.createdAt ?? 0) - new Date(b?.createdAt ?? 0);
+  if (aTime !== bTime) {
+    return aTime - bTime;
   }
 
-  return aTime - bTime;
+  return new Date(a?.createdAt ?? 0) - new Date(b?.createdAt ?? 0);
 }
 
 export function compareTasksBySchedule(a, b) {
@@ -219,4 +241,26 @@ function getScheduleTimestamp(task) {
   const schedule = task?.dueAt instanceof Date ? task.dueAt : new Date(task?.dueAt);
 
   return Number.isNaN(schedule.getTime()) ? Number.POSITIVE_INFINITY : schedule.getTime();
+}
+
+function normalizePriority(priority) {
+  const normalized = String(priority ?? 'medium').toLowerCase();
+
+  if (!['low', 'medium', 'high'].includes(normalized)) {
+    return 'medium';
+  }
+
+  return normalized;
+}
+
+function getPriorityRank(priority) {
+  switch (normalizePriority(priority)) {
+    case 'high':
+      return 0;
+    case 'medium':
+      return 1;
+    case 'low':
+    default:
+      return 2;
+  }
 }

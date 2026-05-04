@@ -3,28 +3,23 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export async function getAllTasks() {
-  return prisma.task.findMany({
-    orderBy: [
-      { dueAt: 'asc' },
-      { createdAt: 'asc' }
-    ]
-  });
+  const tasks = await prisma.task.findMany();
+  return sortTasksForDisplay(tasks);
 }
 
 export async function getTasksByDate(date) {
   const { start, end } = getDayRange(date);
 
-  return prisma.task.findMany({
+  const tasks = await prisma.task.findMany({
     where: {
       dueAt: {
         gte: start,
         lte: end
       }
-    },
-    orderBy: {
-      dueAt: 'asc'
     }
   });
+
+  return sortTasksForDisplay(tasks);
 }
 
 export async function createTask(data) {
@@ -34,6 +29,7 @@ export async function createTask(data) {
     data: {
       title: taskInput.title,
       dueAt: taskInput.dueAt,
+      priority: taskInput.priority,
       notified: false,
       completed: false
     }
@@ -87,16 +83,13 @@ export async function getDueTasksForReminder(windowStart, windowEnd) {
         gte: rangeStart,
         lte: rangeEnd
       }
-    },
-    orderBy: {
-      dueAt: 'asc'
     }
   });
 
-  return tasks.filter((task) => {
+  return sortTasksForDisplay(tasks.filter((task) => {
     const scheduledAt = new Date(task.dueAt);
     return scheduledAt >= start && scheduledAt <= end;
-  });
+  }));
 }
 
 export async function markTasksNotified(ids) {
@@ -126,6 +119,7 @@ function normalizeTaskInput(data) {
   }
 
   const dueAt = parseDueAt(data?.dueAt);
+  const priority = normalizePriority(data?.priority);
 
   if (dueAt.getTime() < Date.now()) {
     throw new Error('Due date cannot be in the past.');
@@ -133,7 +127,8 @@ function normalizeTaskInput(data) {
 
   return {
     title,
-    dueAt
+    dueAt,
+    priority
   };
 }
 
@@ -185,6 +180,16 @@ function parseDayStart(value) {
   return parsed;
 }
 
+function normalizePriority(value) {
+  const normalized = String(value ?? 'medium').toLowerCase();
+
+  if (!['low', 'medium', 'high'].includes(normalized)) {
+    throw new Error('Invalid priority.');
+  }
+
+  return normalized;
+}
+
 function getSnoozedSchedule(task, minutes) {
   const increment = Number(minutes);
 
@@ -205,4 +210,34 @@ function getDayRange(value) {
   end.setHours(23, 59, 59, 999);
 
   return { start, end };
+}
+
+function sortTasksForDisplay(tasks) {
+  return [...tasks].sort((a, b) => {
+    const priorityCompare = getPriorityRank(a.priority) - getPriorityRank(b.priority);
+
+    if (priorityCompare !== 0) {
+      return priorityCompare;
+    }
+
+    const dueAtCompare = new Date(a.dueAt) - new Date(b.dueAt);
+
+    if (dueAtCompare !== 0) {
+      return dueAtCompare;
+    }
+
+    return new Date(a.createdAt ?? 0) - new Date(b.createdAt ?? 0);
+  });
+}
+
+function getPriorityRank(priority) {
+  switch (priority) {
+    case 'high':
+      return 0;
+    case 'medium':
+      return 1;
+    case 'low':
+    default:
+      return 2;
+  }
 }

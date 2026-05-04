@@ -19,6 +19,7 @@ export function createAppStore(api) {
       selectedDate: getTodayKey(),
       formTitle: '',
       formTime: '',
+      formPriority: 'medium',
       banner: null,
       toast: null,
       highlightedTaskId: null,
@@ -139,10 +140,17 @@ export function createAppStore(api) {
       });
     },
 
+    setFormPriority(value) {
+      mutate((draft) => {
+        draft.ui.formPriority = value;
+      });
+    },
+
     async addTaskFromForm() {
       const title = state.ui.formTitle.trim();
       const selectedDate = state.ui.selectedDate;
       const selectedTime = state.ui.formTime || null;
+      const priority = state.ui.formPriority || 'medium';
 
       if (!title) {
         throw new Error('Enter a task');
@@ -160,12 +168,14 @@ export function createAppStore(api) {
 
       await api.addTask({
         title,
-        dueAt
+        dueAt,
+        priority
       });
 
       mutate((draft) => {
         draft.ui.formTitle = '';
         draft.ui.formTime = '';
+        draft.ui.formPriority = 'medium';
       });
 
       await refreshTasks();
