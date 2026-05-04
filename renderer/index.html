@@ -47,13 +47,16 @@
               <input type="time" id="timePicker" />
             </div>
 
-            <div class="field-group">
+            <div class="field-group priority-field" data-priority="medium">
               <label for="priorityPicker">Priority</label>
-              <select id="priorityPicker">
-                <option value="low">Low</option>
-                <option value="medium" selected>Medium</option>
-                <option value="high">High</option>
-              </select>
+              <div class="priority-select-shell">
+                <span class="priority-indicator" aria-hidden="true"></span>
+                <select id="priorityPicker">
+                  <option value="low">Low</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
             </div>
 
             <div class="field-group task-field">

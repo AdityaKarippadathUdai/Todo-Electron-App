@@ -238,6 +238,7 @@ export function createUIController(store) {
     refs.datePicker.value = state.ui.selectedDate;
     refs.timePicker.value = state.ui.formTime;
     refs.priorityPicker.value = state.ui.formPriority;
+    refs.priorityPicker.closest('.priority-field')?.setAttribute('data-priority', state.ui.formPriority || 'medium');
     refs.taskInput.value = state.ui.formTitle;
     refs.quickTaskInput.value = state.ui.quickTitle;
     refs.selectedDateLabel.textContent = formatTaskDate(state.ui.selectedDate);
