@@ -1,4 +1,14 @@
-import { app } from 'electron';
+import { app, ipcMain } from 'electron';
+import {
+  acknowledgeReminders,
+  addTask,
+  deleteTask,
+  getAllTasks,
+  getDueReminders,
+  getTasks,
+  snoozeTask,
+  toggleTask
+} from '../backend/controllers/task.controller.js';
 import { createWindow } from './window.js';
 import { setupTray } from './tray.js';
 
@@ -28,6 +38,16 @@ process.on('uncaughtException', (error) => {
 process.on('unhandledRejection', (reason) => {
   console.error('[main] Unhandled rejection:', reason);
 });
+
+ipcMain.handle('tasks:ready', () => true);
+ipcMain.handle('tasks:getAll', () => getAllTasks());
+ipcMain.handle('tasks:getByDate', (_event, date) => getTasks(date));
+ipcMain.handle('tasks:add', (_event, task) => addTask(task));
+ipcMain.handle('tasks:getDueReminders', (_event, windowStart, windowEnd) => getDueReminders(windowStart, windowEnd));
+ipcMain.handle('tasks:acknowledgeReminders', (_event, ids) => acknowledgeReminders(ids));
+ipcMain.handle('tasks:snooze', (_event, id, minutes) => snoozeTask(id, minutes));
+ipcMain.handle('tasks:toggle', (_event, id) => toggleTask(id));
+ipcMain.handle('tasks:delete', (_event, id) => deleteTask(id));
 
 app.whenReady().then(() => {
   mainWindow = createWindow({ isDev });
