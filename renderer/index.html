@@ -80,46 +80,77 @@
         </section>
 
         <aside class="sidebar">
-          <section class="widget-card insights-widget">
+          <section class="widget-card quick-add-widget">
             <div class="widget-header">
               <div>
-                <p class="eyebrow widget-eyebrow">Insights</p>
+                <p class="eyebrow widget-eyebrow">Quick Add</p>
+                <h2>Quick add task</h2>
+                <p class="section-copy">Capture something before it slips away.</p>
+              </div>
+            </div>
+
+            <div class="quick-add-stack">
+              <input type="text" id="quickTaskInput" placeholder="Write a task..." />
+              <button id="quickAddBtn" type="button">Quick add task</button>
+            </div>
+          </section>
+
+          <section class="widget-card summary-widget">
+            <div class="widget-header">
+              <div>
+                <p class="eyebrow widget-eyebrow">Today Summary</p>
                 <h2 id="sidebarGreeting">Good Morning 👋</h2>
-                <p class="section-copy" id="todayTaskInsightCount">0 tasks today</p>
+                <p class="section-copy" id="todayTaskInsightCount">0 tasks due today</p>
               </div>
             </div>
 
-            <div class="progress-card">
-              <div class="progress-meta">
+            <div class="summary-grid">
+              <div class="summary-tile">
+                <span class="summary-label">Due today</span>
+                <strong id="todayDueCount">0</strong>
+              </div>
+              <div class="summary-tile">
+                <span class="summary-label">Overdue</span>
+                <strong id="todayOverdueCount">0</strong>
+              </div>
+              <div class="summary-tile summary-tile-wide">
+                <span class="summary-label">Completion</span>
+                <strong id="todayProgressPercent">0%</strong>
                 <span id="todayProgressLabel">0 of 0 completed</span>
-                <span id="todayProgressPercent">0%</span>
-              </div>
-              <div class="progress-track" aria-hidden="true">
-                <div id="todayProgressBar" class="progress-fill"></div>
+                <div class="progress-track" aria-hidden="true">
+                  <div id="todayProgressBar" class="progress-fill"></div>
+                </div>
               </div>
             </div>
           </section>
 
-          <section class="widget-card today-widget">
+          <section class="widget-card next-task-widget">
             <div class="widget-header">
               <div>
-                <h2>Today's Tasks</h2>
-                <p class="section-copy">Upcoming tasks due today, sorted by schedule.</p>
+                <p class="eyebrow widget-eyebrow">Next Task</p>
+                <h2>Focus on this</h2>
+                <p class="section-copy">Jump straight to the next important item.</p>
               </div>
             </div>
 
-            <div id="todayTasks" class="widget-list"></div>
+            <div id="nextTaskCard" class="next-task-card">
+              <div class="next-task-title" id="nextTaskTitle">No upcoming tasks</div>
+              <div class="next-task-meta" id="nextTaskMeta">You’re clear for now.</div>
+              <div class="next-task-countdown" id="nextTaskCountdown"></div>
+              <button id="nextTaskFocusBtn" type="button">Focus on this</button>
+            </div>
           </section>
 
-          <section class="widget-card extension-widget">
+          <section class="widget-card timeline-widget">
             <div class="widget-header">
               <div>
-                <h2>More Widgets</h2>
-                <p class="section-copy">Reserved space for calendar, insights, and productivity tools.</p>
+                <p class="eyebrow widget-eyebrow">Mini Timeline</p>
+                <h2>Upcoming tasks</h2>
+                <p class="section-copy">A quick look at what’s next.</p>
               </div>
             </div>
 
-            <div class="widget-empty">Future extension space</div>
+            <div id="timelineList" class="timeline-list"></div>
           </section>
         </aside>
       </div>
