@@ -20,6 +20,8 @@ export function createAppStore(api) {
       formTitle: '',
       formTime: '',
       formPriority: 'medium',
+      quickTitle: '',
+      nowAt: new Date().toISOString(),
       banner: null,
       toast: null,
       highlightedTaskId: null,
@@ -146,39 +148,36 @@ export function createAppStore(api) {
       });
     },
 
-    async addTaskFromForm() {
-      const title = state.ui.formTitle.trim();
-      const selectedDate = state.ui.selectedDate;
-      const selectedTime = state.ui.formTime || null;
-      const priority = state.ui.formPriority || 'medium';
-
-      if (!title) {
-        throw new Error('Enter a task');
-      }
-
-      if (!selectedDate) {
-        throw new Error('Select a date');
-      }
-
-      if (isPastSchedule(selectedDate, selectedTime)) {
-        throw new Error('Choose a due date and time that is not in the past');
-      }
-
-      const dueAt = buildDueAt(selectedDate, selectedTime);
-
-      await api.addTask({
-        title,
-        dueAt,
-        priority
-      });
-
+    setQuickTitle(value) {
       mutate((draft) => {
-        draft.ui.formTitle = '';
-        draft.ui.formTime = '';
-        draft.ui.formPriority = 'medium';
+        draft.ui.quickTitle = value;
       });
+    },
 
-      await refreshTasks();
+    setNow(timestamp) {
+      mutate((draft) => {
+        draft.ui.nowAt = timestamp;
+      });
+    },
+
+    async addTaskFromForm() {
+      await submitTask({
+        title: state.ui.formTitle,
+        selectedDate: state.ui.selectedDate,
+        selectedTime: state.ui.formTime || null,
+        priority: state.ui.formPriority || 'medium',
+        clearForm: true
+      });
+    },
+
+    async quickAddTask() {
+      await submitTask({
+        title: state.ui.quickTitle,
+        selectedDate: state.ui.selectedDate,
+        selectedTime: state.ui.formTime || null,
+        priority: state.ui.formPriority || 'medium',
+        clearQuick: true
+      });
     },
 
     async toggleTask(taskId) {
@@ -324,4 +323,42 @@ export function createAppStore(api) {
     subscribe,
     actions
   };
+
+  async function submitTask({ title, selectedDate, selectedTime, priority, clearForm = false, clearQuick = false }) {
+    const normalizedTitle = String(title ?? '').trim();
+
+    if (!normalizedTitle) {
+      throw new Error('Enter a task');
+    }
+
+    if (!selectedDate) {
+      throw new Error('Select a date');
+    }
+
+    if (isPastSchedule(selectedDate, selectedTime)) {
+      throw new Error('Choose a due date and time that is not in the past');
+    }
+
+    const dueAt = buildDueAt(selectedDate, selectedTime);
+
+    await api.addTask({
+      title: normalizedTitle,
+      dueAt,
+      priority
+    });
+
+    mutate((draft) => {
+      if (clearForm) {
+        draft.ui.formTitle = '';
+        draft.ui.formTime = '';
+        draft.ui.formPriority = 'medium';
+      }
+
+      if (clearQuick) {
+        draft.ui.quickTitle = '';
+      }
+    });
+
+    await refreshTasks();
+  }
 }

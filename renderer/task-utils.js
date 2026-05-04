@@ -47,6 +47,60 @@ export function getPriorityLabel(priority) {
   }
 }
 
+export function getCountdownInfo(task, now = new Date()) {
+  const dueAt = getTaskScheduleDate(task);
+  const deltaMs = dueAt.getTime() - now.getTime();
+
+  if (Number.isNaN(dueAt.getTime())) {
+    return {
+      label: '',
+      tone: 'neutral',
+      status: 'unknown',
+      minutes: 0,
+      dueAt
+    };
+  }
+
+  if (deltaMs < 0) {
+    const minutes = Math.max(1, Math.ceil(Math.abs(deltaMs) / 60_000));
+
+    return {
+      label: `Overdue by ${formatDuration(minutes)}`,
+      tone: 'overdue',
+      status: 'overdue',
+      minutes,
+      dueAt
+    };
+  }
+
+  const minutes = Math.max(1, Math.ceil(deltaMs / 60_000));
+
+  return {
+    label: `Due in ${formatDuration(minutes)}`,
+    tone: minutes <= 60 ? 'soon' : 'ok',
+    status: 'upcoming',
+    minutes,
+    dueAt
+  };
+}
+
+export function getNextTask(tasks, now = new Date()) {
+  const currentTime = now.getTime();
+
+  return [...tasks]
+    .filter((task) => !task.completed && getTaskScheduleDate(task).getTime() >= currentTime)
+    .sort(compareTasksByDueTime)[0] ?? null;
+}
+
+export function getTimelineTasks(tasks, now = new Date(), limit = 5) {
+  const currentTime = now.getTime();
+
+  return [...tasks]
+    .filter((task) => !task.completed && getTaskScheduleDate(task).getTime() >= currentTime)
+    .sort(compareTasksByDueTime)
+    .slice(0, limit);
+}
+
 export function formatTaskDate(dateValue) {
   if (!dateValue) {
     return 'No due date';
@@ -263,4 +317,20 @@ function getPriorityRank(priority) {
     default:
       return 2;
   }
+}
+
+function formatDuration(minutes) {
+  const totalMinutes = Math.max(0, Math.floor(minutes));
+  const hours = Math.floor(totalMinutes / 60);
+  const remainderMinutes = totalMinutes % 60;
+
+  if (hours > 0 && remainderMinutes > 0) {
+    return `${hours}h ${remainderMinutes}m`;
+  }
+
+  if (hours > 0) {
+    return `${hours}h`;
+  }
+
+  return `${remainderMinutes}m`;
 }
