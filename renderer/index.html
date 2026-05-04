@@ -48,14 +48,11 @@
             </div>
 
             <div class="field-group priority-field" data-priority="medium">
-              <label for="priorityPicker">Priority</label>
-              <div class="priority-select-shell">
-                <span class="priority-indicator" aria-hidden="true"></span>
-                <select id="priorityPicker">
-                  <option value="low">Low</option>
-                  <option value="medium" selected>Medium</option>
-                  <option value="high">High</option>
-                </select>
+              <label>Priority</label>
+              <div class="priority-selector" role="radiogroup" aria-label="Task priority">
+                <button type="button" class="priority-pill" data-priority="low" aria-pressed="false">Low</button>
+                <button type="button" class="priority-pill" data-priority="medium" aria-pressed="true">Medium</button>
+                <button type="button" class="priority-pill" data-priority="high" aria-pressed="false">High</button>
               </div>
             </div>
 

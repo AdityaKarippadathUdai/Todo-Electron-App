@@ -22,7 +22,9 @@ export function createUIController(store) {
     addBtn: document.getElementById('addBtn'),
     datePicker: document.getElementById('datePicker'),
     timePicker: document.getElementById('timePicker'),
-    priorityPicker: document.getElementById('priorityPicker'),
+    priorityField: document.querySelector('.priority-field'),
+    prioritySelector: document.querySelector('.priority-selector'),
+    priorityButtons: Array.from(document.querySelectorAll('.priority-pill')),
     taskInput: document.getElementById('taskInput'),
     quickTaskInput: document.getElementById('quickTaskInput'),
     quickAddBtn: document.getElementById('quickAddBtn'),
@@ -64,8 +66,14 @@ export function createUIController(store) {
     refs.timePicker.addEventListener('input', (event) => {
       store.actions.setFormTime(event.target.value);
     });
-    refs.priorityPicker.addEventListener('change', (event) => {
-      store.actions.setFormPriority(event.target.value);
+    refs.prioritySelector.addEventListener('click', (event) => {
+      const button = event.target.closest('.priority-pill');
+
+      if (!button?.dataset.priority) {
+        return;
+      }
+
+      store.actions.setFormPriority(button.dataset.priority);
     });
     refs.taskInput.addEventListener('input', (event) => {
       store.actions.setFormTitle(event.target.value);
@@ -237,8 +245,12 @@ export function createUIController(store) {
 
     refs.datePicker.value = state.ui.selectedDate;
     refs.timePicker.value = state.ui.formTime;
-    refs.priorityPicker.value = state.ui.formPriority;
-    refs.priorityPicker.closest('.priority-field')?.setAttribute('data-priority', state.ui.formPriority || 'medium');
+    refs.priorityField?.setAttribute('data-priority', state.ui.formPriority || 'medium');
+    refs.priorityButtons.forEach((button) => {
+      const isSelected = button.dataset.priority === state.ui.formPriority;
+      button.classList.toggle('is-selected', isSelected);
+      button.setAttribute('aria-pressed', String(isSelected));
+    });
     refs.taskInput.value = state.ui.formTitle;
     refs.quickTaskInput.value = state.ui.quickTitle;
     refs.selectedDateLabel.textContent = formatTaskDate(state.ui.selectedDate);

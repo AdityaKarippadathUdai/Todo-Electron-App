@@ -209,7 +209,6 @@ h2 {
   font-size: 0.9rem;
 }
 
-#priorityPicker,
 #taskInput,
 #datePicker,
 #timePicker {
@@ -234,8 +233,7 @@ h2 {
 
 #taskInput,
 #datePicker,
-#timePicker,
-#priorityPicker {
+#timePicker {
   background: var(--surface);
 }
 
@@ -243,36 +241,68 @@ h2 {
   --priority-color: rgba(245, 158, 11, 0.95);
 }
 
-.priority-select-shell {
-  position: relative;
+.priority-selector {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 4px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.priority-indicator {
+.priority-pill {
+  position: relative;
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 14px 10px 30px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-align: center;
+  transition:
+    transform 0.22s ease,
+    background-color 0.22s ease,
+    box-shadow 0.22s ease,
+    color 0.22s ease;
+  overflow: hidden;
+}
+
+.priority-pill::before {
+  content: "";
   position: absolute;
   left: 12px;
   top: 50%;
-  width: 10px;
-  height: 10px;
+  width: 9px;
+  height: 9px;
   border-radius: 999px;
   transform: translateY(-50%);
   background: var(--priority-color);
-  box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.12);
-  pointer-events: none;
+  box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.04);
+  transition: transform 0.22s ease, box-shadow 0.22s ease, opacity 0.22s ease;
+  opacity: 0.9;
 }
 
-.priority-select-shell select {
-  padding-left: 34px;
-  padding-right: 38px;
-  background-image:
-    linear-gradient(45deg, transparent 50%, var(--text-secondary) 50%),
-    linear-gradient(135deg, var(--text-secondary) 50%, transparent 50%),
-    linear-gradient(to right, transparent, transparent);
-  background-position:
-    calc(100% - 18px) calc(50% - 2px),
-    calc(100% - 12px) calc(50% - 2px),
-    0 0;
-  background-size: 6px 6px, 6px 6px, 100% 100%;
-  background-repeat: no-repeat;
+.priority-pill:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.priority-pill.is-selected {
+  background: color-mix(in srgb, var(--priority-color) 22%, var(--surface-alt));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--priority-color) 55%, transparent),
+    0 10px 24px rgba(0, 0, 0, 0.22);
+  color: #fff;
+  animation: priorityPop 0.24s ease;
+}
+
+.priority-pill.is-selected::before {
+  opacity: 1;
+  transform: translateY(-50%) scale(1.05);
+  box-shadow: 0 0 0 7px color-mix(in srgb, var(--priority-color) 18%, transparent);
 }
 
 .priority-field[data-priority="low"] {
@@ -287,18 +317,6 @@ h2 {
   --priority-color: rgba(239, 68, 68, 0.95);
 }
 
-#priorityPicker option {
-  background: var(--surface);
-  color: var(--text-primary);
-}
-
-#priorityPicker option:checked,
-#priorityPicker option:hover,
-#priorityPicker option:focus {
-  background: var(--surface-alt);
-  color: var(--text-primary);
-}
-
 #taskInput::placeholder {
   color: var(--text-secondary);
 }
@@ -306,8 +324,7 @@ h2 {
 #taskInput:focus,
 #datePicker:focus,
 #timePicker:focus,
-#priorityPicker:focus,
-.priority-select-shell:focus-within #priorityPicker {
+.priority-pill:focus-visible {
   box-shadow:
     0 0 0 1px rgba(59, 130, 246, 0.95),
     0 0 0 4px rgba(59, 130, 246, 0.18),
@@ -315,7 +332,7 @@ h2 {
   animation: focusGlow 0.22s ease;
 }
 
-#priorityPicker:focus-visible {
+.priority-pill:focus-visible {
   outline: none;
 }
 
@@ -1133,6 +1150,20 @@ h2 {
       0 0 0 1px rgba(59, 130, 246, 0.95),
       0 0 0 4px rgba(59, 130, 246, 0.18),
       0 0 24px rgba(59, 130, 246, 0.18);
+  }
+}
+
+@keyframes priorityPop {
+  0% {
+    transform: translateY(0) scale(0.98);
+  }
+
+  60% {
+    transform: translateY(-1px) scale(1.02);
+  }
+
+  100% {
+    transform: translateY(-1px) scale(1);
   }
 }
 
