@@ -8,6 +8,7 @@ import {
   formatTaskDate,
   getPriorityLabel,
   getGreeting,
+  getTaskDateKey,
   getTasksForDate,
   getTodayProgress,
   getTodayKey,
@@ -142,6 +143,12 @@ export function createUIController(store) {
         handleSnoozeTask(snoozeButton.dataset.taskId, snoozeButton.dataset.minutes);
         return;
       }
+
+      const timelineItem = event.target.closest('.timeline-item');
+
+      if (timelineItem?.dataset.taskId) {
+        handleFocusTask(timelineItem.dataset.taskId);
+      }
     });
 
     refs.nextTaskFocusBtn.addEventListener('click', (event) => {
@@ -273,8 +280,11 @@ export function createUIController(store) {
       return;
     }
 
-    refs.taskList.innerHTML = tasks.map((task) => `
-      <li class="task-item${task.id === highlightedTaskId ? ' is-reminded' : ''}" data-task-id="${escapeHtml(task.id)}" data-priority="${escapeHtml(task.priority ?? 'medium')}" data-urgency="${escapeHtml(getCountdownInfo(task, now).tone)}">
+    refs.taskList.innerHTML = tasks.map((task) => {
+      const countdown = getCountdownInfo(task, now);
+
+      return `
+      <li class="task-item${task.id === highlightedTaskId ? ' is-reminded' : ''}" data-task-id="${escapeHtml(task.id)}" data-priority="${escapeHtml(task.priority ?? 'medium')}" data-urgency="${escapeHtml(countdown.tone)}">
         <div class="task-main">
           <input
             type="checkbox"
@@ -288,7 +298,7 @@ export function createUIController(store) {
               <span class="task-priority-chip">${escapeHtml(getPriorityLabel(task.priority))}</span>
             </div>
             <span class="task-date">${escapeHtml(formatTaskSchedule(task))}</span>
-            <span class="task-countdown" data-tone="${escapeHtml(getCountdownInfo(task, now).tone)}">${escapeHtml(getCountdownInfo(task, now).label)}</span>
+            <span class="task-countdown" data-tone="${escapeHtml(countdown.tone)}">${escapeHtml(countdown.label)}</span>
           </div>
         </div>
         <div class="task-actions">
@@ -302,7 +312,8 @@ export function createUIController(store) {
           >&times;</button>
         </div>
       </li>
-    `).join('');
+    `;
+    }).join('');
   }
 
   function renderSidebarSummary(todayProgress, dueTodayCount, overdueCount, nextTask, timelineTasks, now) {
@@ -321,6 +332,7 @@ export function createUIController(store) {
   function renderNextTaskCard(nextTask, now) {
     if (!nextTask) {
       refs.nextTaskCard.classList.add('is-empty');
+      delete refs.nextTaskCard.dataset.urgency;
       refs.nextTaskTitle.textContent = 'No upcoming tasks';
       refs.nextTaskMeta.textContent = 'You’re clear for now.';
       refs.nextTaskCountdown.textContent = 'Take a breath or add something new.';

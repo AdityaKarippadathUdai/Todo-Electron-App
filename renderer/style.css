@@ -454,6 +454,11 @@ h2 {
   border-left: 4px solid var(--priority-color, rgba(59, 130, 246, 0.7));
 }
 
+.timeline-item:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+
 .timeline-dot {
   width: 12px;
   height: 12px;
@@ -745,12 +750,27 @@ h2 {
 }
 
 .task-item.is-reminded {
-  border-color: rgba(59, 130, 246, 0.4);
+  border-color: var(--priority-color);
   box-shadow:
     0 0 0 1px rgba(59, 130, 246, 0.2),
     0 0 28px rgba(59, 130, 246, 0.22),
     0 14px 32px rgba(0, 0, 0, 0.28);
   animation: reminderPulse 3s ease;
+}
+
+.task-item.is-reminded[data-urgency="overdue"] {
+  box-shadow:
+    0 0 0 1px rgba(239, 68, 68, 0.22),
+    0 0 28px rgba(239, 68, 68, 0.28),
+    0 14px 32px rgba(0, 0, 0, 0.28);
+  animation: reminderPulseRed 3s ease;
+}
+
+.task-item.is-reminded[data-urgency="soon"] {
+  box-shadow:
+    0 0 0 1px rgba(245, 158, 11, 0.22),
+    0 0 28px rgba(59, 130, 246, 0.22),
+    0 14px 32px rgba(0, 0, 0, 0.28);
 }
 
 .task-main {
@@ -806,6 +826,13 @@ h2 {
   gap: 6px;
 }
 
+.task-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .task-text {
   min-width: 0;
   word-break: break-word;
@@ -832,6 +859,50 @@ h2 {
   letter-spacing: 0.08em;
 }
 
+.task-priority-chip {
+  flex-shrink: 0;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.task-countdown {
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.task-countdown[data-tone="ok"] {
+  background: rgba(34, 197, 94, 0.12);
+  color: #86efac;
+}
+
+.task-countdown[data-tone="soon"] {
+  background: rgba(245, 158, 11, 0.14);
+  color: #fbbf24;
+}
+
+.task-countdown[data-tone="overdue"] {
+  background: rgba(239, 68, 68, 0.14);
+  color: #fca5a5;
+}
+
+.task-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
 .delete-btn {
   width: 38px;
   height: 38px;
@@ -845,6 +916,16 @@ h2 {
 .delete-btn:hover {
   background: rgba(239, 68, 68, 0.18);
   color: #f87171;
+}
+
+.snooze-btn {
+  min-width: 64px;
+  background: rgba(59, 130, 246, 0.12);
+  color: #bfdbfe;
+}
+
+.snooze-btn:hover {
+  background: rgba(59, 130, 246, 0.22);
 }
 
 .empty-state {
@@ -994,6 +1075,29 @@ h2 {
     box-shadow:
       0 0 0 0 rgba(59, 130, 246, 0),
       0 0 18px rgba(59, 130, 246, 0.16),
+      0 14px 32px rgba(0, 0, 0, 0.28);
+  }
+}
+
+@keyframes reminderPulseRed {
+  0% {
+    box-shadow:
+      0 0 0 0 rgba(239, 68, 68, 0.28),
+      0 0 18px rgba(239, 68, 68, 0.16),
+      0 14px 32px rgba(0, 0, 0, 0.28);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 8px rgba(239, 68, 68, 0),
+      0 0 28px rgba(239, 68, 68, 0.24),
+      0 14px 32px rgba(0, 0, 0, 0.28);
+  }
+
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(239, 68, 68, 0),
+      0 0 18px rgba(239, 68, 68, 0.16),
       0 14px 32px rgba(0, 0, 0, 0.28);
   }
 }

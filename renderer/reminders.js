@@ -46,22 +46,22 @@ export function createReminderController(store) {
   }
 
   function notifyReminder(task) {
-    const message = `⏰ Task Reminder: ${task.title}`;
+    const message = `⏰ Task Due: ${task.title}`;
 
     if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification('Task Reminder', {
-        body: message,
+      new Notification('Task Due', {
+        body: task.title,
         silent: true
       });
     } else {
       store.actions.showBanner(message);
     }
 
-    store.actions.showToast(message);
+    store.actions.showToast(message, 5_000);
     playReminderSound();
     store.actions.focusTask(task.id, {
       scroll: true,
-      durationMs: REMINDER_HIGHLIGHT_MS
+      durationMs: REMINDER_HIGHLIGHT_MS * 2
     });
   }
 

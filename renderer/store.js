@@ -318,12 +318,6 @@ export function createAppStore(api) {
     }
   };
 
-  return {
-    getState,
-    subscribe,
-    actions
-  };
-
   async function submitTask({ title, selectedDate, selectedTime, priority, clearForm = false, clearQuick = false }) {
     const normalizedTitle = String(title ?? '').trim();
 
@@ -361,4 +355,10 @@ export function createAppStore(api) {
 
     await refreshTasks();
   }
+
+  return {
+    getState,
+    subscribe,
+    actions
+  };
 }
