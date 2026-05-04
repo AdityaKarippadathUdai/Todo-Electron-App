@@ -203,16 +203,16 @@ h2 {
 
 .controls-card {
   position: relative;
-  gap: 18px;
-  align-items: end;
+  gap: 16px;
+  align-items: center;
   flex-wrap: wrap;
-  padding: 18px;
+  padding: 20px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 18px;
   box-shadow:
     0 18px 42px rgba(0, 0, 0, 0.26),
     inset 0 1px 0 rgba(255, 255, 255, 0.03);
-  overflow: hidden;
+  overflow: visible;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
@@ -236,11 +236,31 @@ h2 {
 .field-group {
   display: grid;
   gap: 10px;
+  min-width: 0;
   flex: 1 1 180px;
 }
 
 .task-field {
   flex: 2 1 280px;
+}
+
+.field-date,
+.field-time {
+  flex: 1 1 190px;
+}
+
+.field-task {
+  flex: 2 1 320px;
+  min-width: 260px;
+}
+
+.field-priority {
+  flex: 0 0 auto;
+  min-width: 320px;
+}
+
+.field-actions {
+  flex: 0 0 auto;
 }
 
 .field-group > label {
@@ -388,16 +408,21 @@ h2 {
 }
 
 .priority-selector {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: flex;
   gap: 8px;
   padding: 4px;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.06);
+  white-space: nowrap;
+  width: max-content;
+  max-width: 100%;
+  flex-shrink: 0;
+  overflow: visible;
 }
 
 .priority-pill {
+  flex: 0 0 auto;
   position: relative;
   border: 0;
   border-radius: 999px;
@@ -597,6 +622,10 @@ h2 {
   top: -8px;
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+}
+
+.controls-card .field-priority {
+  overflow: visible;
 }
 
 .quick-add-stack {
@@ -1496,12 +1525,34 @@ h2 {
     padding: 16px;
   }
 
+  .field-date,
+  .field-time,
+  .field-task,
+  .field-priority,
+  .field-actions {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .field-priority {
+    order: 2;
+  }
+
+  .field-task {
+    order: 1;
+  }
+
+  .field-actions {
+    order: 3;
+  }
+
   #addBtn {
     width: 100%;
   }
 
   .priority-selector {
-    grid-template-columns: 1fr;
+    width: 100%;
+    flex-wrap: wrap;
   }
 
   .input-shell input {
@@ -1514,6 +1565,11 @@ h2 {
 
   .task-title-row {
     flex-direction: column;
+  }
+
+  .priority-pill {
+    flex: 1 1 0;
+    min-width: 0;
   }
 
   .delete-btn {
