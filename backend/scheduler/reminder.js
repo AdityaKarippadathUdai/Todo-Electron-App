@@ -1,5 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import prismaClientPkg from '@prisma/client';
 import { Notification } from 'electron';
+
+const { PrismaClient } = prismaClientPkg;
 
 const prisma = new PrismaClient();
 
