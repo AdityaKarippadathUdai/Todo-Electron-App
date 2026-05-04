@@ -5,8 +5,7 @@ const prisma = new PrismaClient();
 export async function getAllTasks() {
   return prisma.task.findMany({
     orderBy: [
-      { dueDate: 'asc' },
-      { dueTime: 'asc' },
+      { dueAt: 'asc' },
       { createdAt: 'asc' }
     ]
   });
@@ -17,13 +16,13 @@ export async function getTasksByDate(date) {
 
   return prisma.task.findMany({
     where: {
-      dueDate: {
+      dueAt: {
         gte: start,
         lte: end
       }
     },
     orderBy: {
-      createdAt: 'asc'
+      dueAt: 'asc'
     }
   });
 }
@@ -34,8 +33,7 @@ export async function createTask(data) {
   return prisma.task.create({
     data: {
       title: taskInput.title,
-      dueDate: taskInput.dueDate,
-      dueTime: taskInput.dueTime,
+      dueAt: taskInput.dueAt,
       notified: false,
       completed: false
     }
@@ -63,8 +61,7 @@ export async function snoozeTask(id, minutes = 10) {
   return prisma.task.update({
     where: { id },
     data: {
-      dueDate: nextSchedule.dueDate,
-      dueTime: nextSchedule.dueTime,
+      dueAt: nextSchedule.dueAt,
       notified: false
     }
   });
@@ -86,22 +83,19 @@ export async function getDueTasksForReminder(windowStart, windowEnd) {
     where: {
       completed: false,
       notified: false,
-      dueTime: {
-        not: null
-      },
-      dueDate: {
+      dueAt: {
         gte: rangeStart,
         lte: rangeEnd
       }
     },
     orderBy: {
-      dueDate: 'asc'
+      dueAt: 'asc'
     }
   });
 
   return tasks.filter((task) => {
-    const dueAt = combineSchedule(task.dueDate, task.dueTime);
-    return dueAt >= start && dueAt <= end;
+    const scheduledAt = new Date(task.dueAt);
+    return scheduledAt >= start && scheduledAt <= end;
   });
 }
 
@@ -131,22 +125,37 @@ function normalizeTaskInput(data) {
     throw new Error('Task title is required.');
   }
 
-  const dueDate = parseDueDate(data?.dueDate);
-  const dueTime = parseDueTime(data?.dueTime);
-  const scheduledAt = combineSchedule(dueDate, dueTime);
+  const dueAt = parseDueAt(data?.dueAt ?? combineSchedule(data?.dueDate, data?.dueTime));
 
-  if (scheduledAt.getTime() < Date.now()) {
+  if (dueAt.getTime() < Date.now()) {
     throw new Error('Due date cannot be in the past.');
   }
 
   return {
     title,
-    dueDate,
-    dueTime
+    dueAt
   };
 }
 
-function parseDueDate(value) {
+function parseDueAt(value) {
+  if (!value) {
+    throw new Error('Due date is required.');
+  }
+
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return new Date(value);
+  }
+
+  const parsed = new Date(value);
+
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed;
+  }
+
+  throw new Error('Invalid due date.');
+}
+
+function parseDateOnly(value) {
   if (!value) {
     throw new Error('Due date is required.');
   }
@@ -176,29 +185,21 @@ function parseDueDate(value) {
   return parsed;
 }
 
-function parseDueTime(value) {
-  if (value == null || value === '') {
-    return null;
-  }
-
-  const normalizedValue = String(value).trim();
-
-  if (!/^\d{2}:\d{2}$/.test(normalizedValue)) {
-    throw new Error('Invalid due time.');
-  }
-
-  return normalizedValue;
-}
-
 function combineSchedule(dueDate, dueTime) {
-  const scheduledAt = new Date(dueDate);
+  const scheduledAt = parseDateOnly(dueDate);
 
   if (!dueTime) {
     scheduledAt.setHours(23, 59, 59, 999);
     return scheduledAt;
   }
 
-  const [hours, minutes] = dueTime.split(':').map(Number);
+  const normalizedValue = String(dueTime).trim();
+
+  if (!/^\d{2}:\d{2}$/.test(normalizedValue)) {
+    throw new Error('Invalid due time.');
+  }
+
+  const [hours, minutes] = normalizedValue.split(':').map(Number);
   scheduledAt.setHours(hours, minutes, 0, 0);
   return scheduledAt;
 }
@@ -210,31 +211,15 @@ function getSnoozedSchedule(task, minutes) {
     throw new Error('Invalid snooze duration.');
   }
 
-  const baseSchedule = task.dueTime
-    ? combineSchedule(task.dueDate, task.dueTime)
-    : new Date();
-
-  const nextSchedule = new Date(baseSchedule.getTime() + increment * 60 * 1000);
+  const baseSchedule = task.dueAt ? new Date(task.dueAt) : new Date();
 
   return {
-    dueDate: new Date(
-      nextSchedule.getFullYear(),
-      nextSchedule.getMonth(),
-      nextSchedule.getDate(),
-      0,
-      0,
-      0,
-      0
-    ),
-    dueTime: [
-      String(nextSchedule.getHours()).padStart(2, '0'),
-      String(nextSchedule.getMinutes()).padStart(2, '0')
-    ].join(':')
+    dueAt: new Date(baseSchedule.getTime() + increment * 60 * 1000)
   };
 }
 
 function getDayRange(value) {
-  const start = parseDueDate(value);
+  const start = parseDateOnly(value);
   const end = new Date(start);
   end.setHours(23, 59, 59, 999);
 

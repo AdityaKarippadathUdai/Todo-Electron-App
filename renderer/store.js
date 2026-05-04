@@ -1,4 +1,5 @@
 import {
+  buildDueAt,
   getSnoozedPreview,
   getTaskDateKey,
   getTodayKey,
@@ -155,10 +156,11 @@ export function createAppStore(api) {
         throw new Error('Choose a due date and time that is not in the past');
       }
 
+      const dueAt = buildDueAt(dueDate, dueTime);
+
       await api.addTask({
         title,
-        dueDate,
-        dueTime
+        dueAt
       });
 
       mutate((draft) => {

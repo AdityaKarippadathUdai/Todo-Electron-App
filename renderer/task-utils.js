@@ -28,7 +28,7 @@ export function getTodayKey(now = new Date()) {
 }
 
 export function getTaskDateKey(task) {
-  return normalizeDateKey(task?.dueDate);
+  return normalizeDateKey(task?.dueAt);
 }
 
 export function formatTaskDate(dateValue) {
@@ -44,9 +44,11 @@ export function formatTaskDate(dateValue) {
 }
 
 export function formatTimeLabel(timeValue) {
-  const [hours = '00', minutes = '00'] = String(timeValue).split(':');
-  const time = new Date();
-  time.setHours(Number(hours), Number(minutes), 0, 0);
+  const time = timeValue instanceof Date ? new Date(timeValue) : new Date(timeValue);
+
+  if (Number.isNaN(time.getTime())) {
+    return '';
+  }
 
   return time.toLocaleTimeString(undefined, {
     hour: 'numeric',
@@ -55,24 +57,24 @@ export function formatTimeLabel(timeValue) {
 }
 
 export function formatTaskSchedule(task) {
-  const dateLabel = formatTaskDate(task?.dueDate);
+  const dateLabel = formatTaskDate(task?.dueAt);
 
-  if (task?.dueTime) {
-    return `${dateLabel} at ${formatTimeLabel(task.dueTime)}`;
+  if (!isAllDaySchedule(task?.dueAt)) {
+    return `${dateLabel} at ${formatTimeLabel(task?.dueAt)}`;
   }
 
   return dateLabel;
 }
 
 export function compareTasksByDueTime(a, b) {
-  const aTime = a?.dueTime ?? '99:99';
-  const bTime = b?.dueTime ?? '99:99';
+  const aTime = getScheduleTimestamp(a);
+  const bTime = getScheduleTimestamp(b);
 
   if (aTime === bTime) {
     return new Date(a?.createdAt ?? 0) - new Date(b?.createdAt ?? 0);
   }
 
-  return aTime.localeCompare(bTime);
+  return aTime - bTime;
 }
 
 export function compareTasksBySchedule(a, b) {
@@ -134,48 +136,20 @@ export function getGreeting(now = new Date()) {
 }
 
 export function isPastSchedule(dateValue, timeValue) {
-  if (!dateValue) {
-    return false;
-  }
-
-  const [year, month, day] = dateValue.split('-').map(Number);
-  const schedule = new Date(year, month - 1, day);
-
-  if (timeValue) {
-    const [hours, minutes] = timeValue.split(':').map(Number);
-    schedule.setHours(hours, minutes, 0, 0);
-  } else {
-    schedule.setHours(23, 59, 59, 999);
-  }
-
+  const schedule = buildDueAt(dateValue, timeValue);
   return schedule.getTime() < Date.now();
 }
 
 export function getTaskScheduleDate(task) {
-  const [year, month, day] = getTaskDateKey(task).split('-').map(Number);
-  const [hours, minutes] = String(task?.dueTime ?? '00:00').split(':').map(Number);
-
-  return new Date(year, month - 1, day, hours, minutes, 0, 0);
+  return new Date(task?.dueAt ?? 0);
 }
 
 export function getSnoozedPreview(task, minutes = SNOOZE_MINUTES) {
-  const baseSchedule = task?.dueTime ? getTaskScheduleDate(task) : new Date();
+  const baseSchedule = task?.dueAt ? getTaskScheduleDate(task) : new Date();
   const nextSchedule = new Date(baseSchedule.getTime() + minutes * 60 * 1000);
 
   return {
-    dueDate: new Date(
-      nextSchedule.getFullYear(),
-      nextSchedule.getMonth(),
-      nextSchedule.getDate(),
-      0,
-      0,
-      0,
-      0
-    ).toISOString(),
-    dueTime: [
-      String(nextSchedule.getHours()).padStart(2, '0'),
-      String(nextSchedule.getMinutes()).padStart(2, '0')
-    ].join(':')
+    dueAt: nextSchedule.toISOString()
   };
 }
 
@@ -200,4 +174,49 @@ export function createTaskCollectionSelector() {
 
     return cachedResult;
   };
+}
+
+export function buildDueAt(dateValue, timeValue) {
+  if (!dateValue) {
+    throw new Error('Due date is required.');
+  }
+
+  const scheduledAt = dateValue instanceof Date ? new Date(dateValue) : new Date(dateValue);
+
+  if (Number.isNaN(scheduledAt.getTime())) {
+    throw new Error('Invalid due date.');
+  }
+
+  if (timeValue) {
+    const normalizedTime = String(timeValue).trim();
+
+    if (!/^\d{2}:\d{2}$/.test(normalizedTime)) {
+      throw new Error('Invalid due time.');
+    }
+
+    const [hours, minutes] = normalizedTime.split(':').map(Number);
+    scheduledAt.setHours(hours, minutes, 0, 0);
+  } else {
+    scheduledAt.setHours(23, 59, 59, 999);
+  }
+
+  return scheduledAt;
+}
+
+export function isAllDaySchedule(dateValue) {
+  const schedule = dateValue instanceof Date ? new Date(dateValue) : new Date(dateValue);
+
+  return (
+    !Number.isNaN(schedule.getTime()) &&
+    schedule.getHours() === 23 &&
+    schedule.getMinutes() === 59 &&
+    schedule.getSeconds() === 59 &&
+    schedule.getMilliseconds() === 999
+  );
+}
+
+function getScheduleTimestamp(task) {
+  const schedule = task?.dueAt instanceof Date ? task.dueAt : new Date(task?.dueAt);
+
+  return Number.isNaN(schedule.getTime()) ? Number.POSITIVE_INFINITY : schedule.getTime();
 }

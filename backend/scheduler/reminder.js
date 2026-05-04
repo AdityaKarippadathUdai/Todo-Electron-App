@@ -15,10 +15,13 @@ export function startReminderService() {
     const tasks = await prisma.task.findMany({
       where: {
         completed: false,
-        dueDate: {
+        dueAt: {
           gte: rangeStart,
           lte: rangeEnd
         }
+      },
+      orderBy: {
+        dueAt: 'asc'
       }
     });
 
@@ -35,17 +38,10 @@ export function startReminderService() {
 }
 
 function shouldNotifyForTask(task, now, windowEnd) {
-  if (!task?.dueDate) {
+  if (!task?.dueAt) {
     return false;
   }
 
-  if (!task.dueTime) {
-    return true;
-  }
-
-  const dueAt = new Date(task.dueDate);
-  const [hours, minutes] = String(task.dueTime).split(':').map(Number);
-  dueAt.setHours(hours, minutes, 0, 0);
-
+  const dueAt = new Date(task.dueAt);
   return dueAt >= now && dueAt <= windowEnd;
 }

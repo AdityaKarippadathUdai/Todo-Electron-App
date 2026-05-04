@@ -6,6 +6,7 @@ import {
   getGreeting,
   getTasksForDate,
   getTodayProgress,
+  isAllDaySchedule,
   REMINDER_HIGHLIGHT_MS,
   SNOOZE_MINUTES
 } from './task-utils.js';
@@ -222,7 +223,7 @@ export function createUIController(store) {
       <article class="widget-item${task.id === highlightedTaskId ? ' is-reminded' : ''}" data-task-id="${escapeHtml(task.id)}">
         <div class="widget-copy">
           <div class="widget-title">${escapeHtml(task.title)}</div>
-          <div class="widget-time">${escapeHtml(task.dueTime ? formatTimeLabel(task.dueTime) : 'Any time')}</div>
+          <div class="widget-time">${escapeHtml(isAllDaySchedule(task.dueAt) ? 'Any time' : formatTimeLabel(task.dueAt))}</div>
         </div>
         <div class="widget-actions">
           <input
