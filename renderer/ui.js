@@ -1,5 +1,8 @@
 import {
   createTaskCollectionSelector,
+  getCountdownInfo,
+  getNextTask,
+  getTimelineTasks,
   formatTaskSchedule,
   formatTimeLabel,
   formatTaskDate,
@@ -7,6 +10,7 @@ import {
   getGreeting,
   getTasksForDate,
   getTodayProgress,
+  getTodayKey,
   isAllDaySchedule,
   REMINDER_HIGHLIGHT_MS,
   SNOOZE_MINUTES
@@ -19,6 +23,8 @@ export function createUIController(store) {
     timePicker: document.getElementById('timePicker'),
     priorityPicker: document.getElementById('priorityPicker'),
     taskInput: document.getElementById('taskInput'),
+    quickTaskInput: document.getElementById('quickTaskInput'),
+    quickAddBtn: document.getElementById('quickAddBtn'),
     taskCount: document.getElementById('taskCount'),
     selectedDateLabel: document.getElementById('selectedDateLabel'),
     overdueCount: document.getElementById('overdueCount'),
@@ -26,18 +32,27 @@ export function createUIController(store) {
     reminderBanner: document.getElementById('reminderBanner'),
     toast: document.getElementById('toast'),
     taskList: document.getElementById('taskList'),
-    todayTasks: document.getElementById('todayTasks'),
     sidebarGreeting: document.getElementById('sidebarGreeting'),
     todayTaskInsightCount: document.getElementById('todayTaskInsightCount'),
+    todayDueCount: document.getElementById('todayDueCount'),
+    todayOverdueCount: document.getElementById('todayOverdueCount'),
     todayProgressLabel: document.getElementById('todayProgressLabel'),
     todayProgressPercent: document.getElementById('todayProgressPercent'),
-    todayProgressBar: document.getElementById('todayProgressBar')
+    todayProgressBar: document.getElementById('todayProgressBar'),
+    nextTaskCard: document.getElementById('nextTaskCard'),
+    nextTaskTitle: document.getElementById('nextTaskTitle'),
+    nextTaskMeta: document.getElementById('nextTaskMeta'),
+    nextTaskCountdown: document.getElementById('nextTaskCountdown'),
+    nextTaskFocusBtn: document.getElementById('nextTaskFocusBtn'),
+    timelineList: document.getElementById('timelineList')
   };
 
   const selectCollections = createTaskCollectionSelector();
+  let clockTimer = null;
   let lastHandledScrollToken = null;
 
   bindEvents();
+  startClock();
   store.subscribe(render);
 
   function bindEvents() {
@@ -54,9 +69,18 @@ export function createUIController(store) {
     refs.taskInput.addEventListener('input', (event) => {
       store.actions.setFormTitle(event.target.value);
     });
+    refs.quickTaskInput.addEventListener('input', (event) => {
+      store.actions.setQuickTitle(event.target.value);
+    });
+    refs.quickAddBtn.addEventListener('click', handleQuickAddTask);
     refs.taskInput.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
         handleAddTask();
+      }
+    });
+    refs.quickTaskInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        handleQuickAddTask();
       }
     });
 
@@ -87,6 +111,14 @@ export function createUIController(store) {
         return;
       }
 
+      const snoozeButton = event.target.closest('.snooze-btn');
+
+      if (snoozeButton?.dataset.taskId) {
+        event.preventDefault();
+        handleSnoozeTask(snoozeButton.dataset.taskId, snoozeButton.dataset.minutes);
+        return;
+      }
+
       const deleteButton = event.target.closest('.delete-btn');
 
       if (deleteButton?.dataset.taskId) {
@@ -94,32 +126,40 @@ export function createUIController(store) {
       }
     });
 
-    refs.todayTasks.addEventListener('change', (event) => {
-      const checkbox = event.target.closest('.widget-checkbox');
+    refs.timelineList.addEventListener('click', (event) => {
+      const focusButton = event.target.closest('.timeline-focus-btn');
 
-      if (checkbox?.dataset.taskId) {
-        handleToggleTask(checkbox.dataset.taskId);
-      }
-    });
-
-    refs.todayTasks.addEventListener('click', (event) => {
-      const snoozeButton = event.target.closest('.widget-snooze');
-
-      if (snoozeButton?.dataset.taskId) {
-        event.stopPropagation();
-        handleSnoozeTask(snoozeButton.dataset.taskId);
+      if (focusButton?.dataset.taskId) {
+        event.preventDefault();
+        handleFocusTask(focusButton.dataset.taskId);
         return;
       }
 
-      const widgetItem = event.target.closest('.widget-item');
+      const snoozeButton = event.target.closest('.timeline-snooze-btn');
 
-      if (widgetItem?.dataset.taskId) {
-        store.actions.focusTask(widgetItem.dataset.taskId, {
-          scroll: true,
-          durationMs: REMINDER_HIGHLIGHT_MS
-        });
+      if (snoozeButton?.dataset.taskId) {
+        event.stopPropagation();
+        handleSnoozeTask(snoozeButton.dataset.taskId, snoozeButton.dataset.minutes);
+        return;
       }
     });
+
+    refs.nextTaskFocusBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      const nextTask = getNextTask(store.getState().tasks.items, new Date(store.getState().ui.nowAt));
+      if (nextTask) {
+        handleFocusTask(nextTask.id);
+      }
+    });
+  }
+
+  function startClock() {
+    const tick = () => {
+      store.actions.setNow(new Date().toISOString());
+    };
+
+    tick();
+    clockTimer = window.setInterval(tick, 60_000);
   }
 
   async function handleAddTask() {
@@ -148,13 +188,22 @@ export function createUIController(store) {
     }
   }
 
-  async function handleSnoozeTask(taskId) {
+  async function handleQuickAddTask() {
     try {
-      await store.actions.snoozeTask(taskId, SNOOZE_MINUTES);
+      await store.actions.quickAddTask();
+    } catch (error) {
+      alert(error.message);
+    }
+  }
+
+  async function handleSnoozeTask(taskId, minutes = SNOOZE_MINUTES) {
+    try {
+      const snoozeMinutes = Number(minutes) || SNOOZE_MINUTES;
+      await store.actions.snoozeTask(taskId, snoozeMinutes);
       const task = store.getState().tasks.items.find((item) => item.id === taskId);
 
       if (task) {
-        store.actions.showToast(`⏰ Task Reminder: ${task.title} snoozed for ${SNOOZE_MINUTES} minutes`);
+        store.actions.showToast(`⏰ Task Reminder: ${task.title} snoozed for ${snoozeMinutes} minutes`);
       }
     } catch (error) {
       console.error('Snooze failed:', error);
@@ -162,23 +211,35 @@ export function createUIController(store) {
     }
   }
 
+  function handleFocusTask(taskId) {
+    store.actions.focusTask(taskId, {
+      scroll: true,
+      durationMs: REMINDER_HIGHLIGHT_MS
+    });
+  }
+
   function render(state) {
+    const now = new Date(state.ui.nowAt);
     const collections = selectCollections(state.tasks.items);
     const visibleTasks = getTasksForDate(state.tasks.items, state.ui.selectedDate);
     const todayProgress = getTodayProgress(state.tasks.items);
+    const nextTask = getNextTask(state.tasks.items, now);
+    const timelineTasks = getTimelineTasks(state.tasks.items, now, 5);
+    const dueTodayCount = state.tasks.items.filter((task) => getTaskDateKey(task) === getTodayKey(now)).length;
+    const overdueCount = collections.overdueTasks.length;
 
     refs.datePicker.value = state.ui.selectedDate;
     refs.timePicker.value = state.ui.formTime;
     refs.priorityPicker.value = state.ui.formPriority;
     refs.taskInput.value = state.ui.formTitle;
+    refs.quickTaskInput.value = state.ui.quickTitle;
     refs.selectedDateLabel.textContent = formatTaskDate(state.ui.selectedDate);
     refs.overdueCount.textContent = `${collections.overdueTasks.length} overdue`;
     refs.upcomingCount.textContent = `${collections.upcomingTasks.length} upcoming`;
 
     renderAlerts(state);
-    renderMainTaskList(visibleTasks, state.ui.highlightedTaskId);
-    renderTodayWidget(collections.todayTasks, state.ui.highlightedTaskId);
-    renderInsights(todayProgress);
+    renderMainTaskList(visibleTasks, state.ui.highlightedTaskId, now);
+    renderSidebarSummary(todayProgress, dueTodayCount, overdueCount, nextTask, timelineTasks, now);
     handleScrollRequest(state.ui.scrollRequest);
   }
 
@@ -204,7 +265,7 @@ export function createUIController(store) {
     }
   }
 
-  function renderMainTaskList(tasks, highlightedTaskId) {
+  function renderMainTaskList(tasks, highlightedTaskId, now) {
     refs.taskCount.textContent = `${tasks.length} ${tasks.length === 1 ? 'task' : 'tasks'}`;
 
     if (!tasks.length) {
@@ -213,7 +274,7 @@ export function createUIController(store) {
     }
 
     refs.taskList.innerHTML = tasks.map((task) => `
-      <li class="task-item${task.id === highlightedTaskId ? ' is-reminded' : ''}" data-task-id="${escapeHtml(task.id)}" data-priority="${escapeHtml(task.priority ?? 'medium')}">
+      <li class="task-item${task.id === highlightedTaskId ? ' is-reminded' : ''}" data-task-id="${escapeHtml(task.id)}" data-priority="${escapeHtml(task.priority ?? 'medium')}" data-urgency="${escapeHtml(getCountdownInfo(task, now).tone)}">
         <div class="task-main">
           <input
             type="checkbox"
@@ -222,55 +283,87 @@ export function createUIController(store) {
             ${task.completed ? 'checked' : ''}
           />
           <div class="task-copy">
-            <span class="task-text${task.completed ? ' is-complete' : ''}">${escapeHtml(task.title)}</span>
+            <div class="task-title-row">
+              <span class="task-text${task.completed ? ' is-complete' : ''}">${escapeHtml(task.title)}</span>
+              <span class="task-priority-chip">${escapeHtml(getPriorityLabel(task.priority))}</span>
+            </div>
             <span class="task-date">${escapeHtml(formatTaskSchedule(task))}</span>
-            <span class="task-priority">${escapeHtml(getPriorityLabel(task.priority))} priority</span>
+            <span class="task-countdown" data-tone="${escapeHtml(getCountdownInfo(task, now).tone)}">${escapeHtml(getCountdownInfo(task, now).label)}</span>
           </div>
         </div>
-        <button
-          class="delete-btn"
-          type="button"
-          data-task-id="${escapeHtml(task.id)}"
-          aria-label="Delete ${escapeHtml(task.title)}"
-        >&times;</button>
+        <div class="task-actions">
+          <button type="button" class="snooze-btn" data-task-id="${escapeHtml(task.id)}" data-minutes="5">+5m</button>
+          <button type="button" class="snooze-btn" data-task-id="${escapeHtml(task.id)}" data-minutes="10">+10m</button>
+          <button
+            class="delete-btn"
+            type="button"
+            data-task-id="${escapeHtml(task.id)}"
+            aria-label="Delete ${escapeHtml(task.title)}"
+          >&times;</button>
+        </div>
       </li>
     `).join('');
   }
 
-  function renderTodayWidget(tasks, highlightedTaskId) {
-    if (!tasks.length) {
-      refs.todayTasks.innerHTML = '<div class="widget-empty">No tasks for today 🎉</div>';
-      return;
-    }
-
-    refs.todayTasks.innerHTML = tasks.map((task) => `
-      <article class="widget-item${task.id === highlightedTaskId ? ' is-reminded' : ''}" data-task-id="${escapeHtml(task.id)}" data-priority="${escapeHtml(task.priority ?? 'medium')}">
-        <div class="widget-copy">
-          <div class="widget-title">${escapeHtml(task.title)}</div>
-          <div class="widget-time">${escapeHtml(isAllDaySchedule(task.dueAt) ? 'Any time' : formatTimeLabel(task.dueAt))}</div>
-          <div class="widget-priority">${escapeHtml(getPriorityLabel(task.priority))} priority</div>
-        </div>
-        <div class="widget-actions">
-          <input
-            type="checkbox"
-            class="widget-checkbox"
-            data-task-id="${escapeHtml(task.id)}"
-            aria-label="Mark ${escapeHtml(task.title)} complete"
-            ${task.completed ? 'checked' : ''}
-          />
-          <button type="button" class="widget-snooze" data-task-id="${escapeHtml(task.id)}">Snooze</button>
-          <span class="widget-status" aria-hidden="true"></span>
-        </div>
-      </article>
-    `).join('');
-  }
-
-  function renderInsights(todayProgress) {
-    refs.sidebarGreeting.textContent = getGreeting();
-    refs.todayTaskInsightCount.textContent = `${todayProgress.total} ${todayProgress.total === 1 ? 'task' : 'tasks'} today`;
+  function renderSidebarSummary(todayProgress, dueTodayCount, overdueCount, nextTask, timelineTasks, now) {
+    refs.sidebarGreeting.textContent = getGreeting(now);
+    refs.todayTaskInsightCount.textContent = `${dueTodayCount} ${dueTodayCount === 1 ? 'task' : 'tasks'} due today`;
+    refs.todayDueCount.textContent = String(dueTodayCount);
+    refs.todayOverdueCount.textContent = String(overdueCount);
     refs.todayProgressLabel.textContent = `${todayProgress.completed} of ${todayProgress.total} completed`;
     refs.todayProgressPercent.textContent = `${Math.round(todayProgress.ratio * 100)}%`;
     refs.todayProgressBar.style.width = `${todayProgress.ratio * 100}%`;
+
+    renderNextTaskCard(nextTask, now);
+    renderTimeline(timelineTasks, now);
+  }
+
+  function renderNextTaskCard(nextTask, now) {
+    if (!nextTask) {
+      refs.nextTaskCard.classList.add('is-empty');
+      refs.nextTaskTitle.textContent = 'No upcoming tasks';
+      refs.nextTaskMeta.textContent = 'You’re clear for now.';
+      refs.nextTaskCountdown.textContent = 'Take a breath or add something new.';
+      refs.nextTaskFocusBtn.disabled = true;
+      delete refs.nextTaskFocusBtn.dataset.taskId;
+      return;
+    }
+
+    const countdown = getCountdownInfo(nextTask, now);
+
+    refs.nextTaskCard.classList.remove('is-empty');
+    refs.nextTaskCard.dataset.urgency = countdown.tone;
+    refs.nextTaskTitle.textContent = nextTask.title;
+    refs.nextTaskMeta.textContent = `${formatTaskSchedule(nextTask)} • ${getPriorityLabel(nextTask.priority)} priority`;
+    refs.nextTaskCountdown.textContent = countdown.label;
+    refs.nextTaskFocusBtn.disabled = false;
+    refs.nextTaskFocusBtn.dataset.taskId = nextTask.id;
+  }
+
+  function renderTimeline(tasks, now) {
+    if (!tasks.length) {
+      refs.timelineList.innerHTML = '<div class="widget-empty">No upcoming tasks right now.</div>';
+      return;
+    }
+
+    refs.timelineList.innerHTML = tasks.map((task) => {
+      const countdown = getCountdownInfo(task, now);
+      const dueTimeLabel = isAllDaySchedule(task.dueAt) ? 'Any time' : formatTimeLabel(task.dueAt);
+
+      return `
+        <article class="timeline-item" data-task-id="${escapeHtml(task.id)}" data-urgency="${escapeHtml(countdown.tone)}">
+          <span class="timeline-dot" aria-hidden="true"></span>
+          <span class="timeline-content">
+            <span class="timeline-title">${escapeHtml(task.title)}</span>
+            <span class="timeline-meta">${escapeHtml(dueTimeLabel)} • ${escapeHtml(countdown.label)}</span>
+          </span>
+          <span class="timeline-actions">
+            <button type="button" class="timeline-focus-btn" data-task-id="${escapeHtml(task.id)}">Focus on this</button>
+            <button type="button" class="timeline-snooze-btn" data-task-id="${escapeHtml(task.id)}" data-minutes="5">+5m</button>
+          </span>
+        </article>
+      `;
+    }).join('');
   }
 
   function handleScrollRequest(scrollRequest) {
