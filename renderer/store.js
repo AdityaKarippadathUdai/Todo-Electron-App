@@ -141,22 +141,22 @@ export function createAppStore(api) {
 
     async addTaskFromForm() {
       const title = state.ui.formTitle.trim();
-      const dueDate = state.ui.selectedDate;
-      const dueTime = state.ui.formTime || null;
+      const selectedDate = state.ui.selectedDate;
+      const selectedTime = state.ui.formTime || null;
 
       if (!title) {
         throw new Error('Enter a task');
       }
 
-      if (!dueDate) {
+      if (!selectedDate) {
         throw new Error('Select a date');
       }
 
-      if (isPastSchedule(dueDate, dueTime)) {
+      if (isPastSchedule(selectedDate, selectedTime)) {
         throw new Error('Choose a due date and time that is not in the past');
       }
 
-      const dueAt = buildDueAt(dueDate, dueTime);
+      const dueAt = buildDueAt(selectedDate, selectedTime);
 
       await api.addTask({
         title,

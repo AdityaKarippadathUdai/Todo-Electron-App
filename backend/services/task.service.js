@@ -125,7 +125,7 @@ function normalizeTaskInput(data) {
     throw new Error('Task title is required.');
   }
 
-  const dueAt = parseDueAt(data?.dueAt ?? combineSchedule(data?.dueDate, data?.dueTime));
+  const dueAt = parseDueAt(data?.dueAt);
 
   if (dueAt.getTime() < Date.now()) {
     throw new Error('Due date cannot be in the past.');
@@ -155,7 +155,7 @@ function parseDueAt(value) {
   throw new Error('Invalid due date.');
 }
 
-function parseDateOnly(value) {
+function parseDayStart(value) {
   if (!value) {
     throw new Error('Due date is required.');
   }
@@ -185,25 +185,6 @@ function parseDateOnly(value) {
   return parsed;
 }
 
-function combineSchedule(dueDate, dueTime) {
-  const scheduledAt = parseDateOnly(dueDate);
-
-  if (!dueTime) {
-    scheduledAt.setHours(23, 59, 59, 999);
-    return scheduledAt;
-  }
-
-  const normalizedValue = String(dueTime).trim();
-
-  if (!/^\d{2}:\d{2}$/.test(normalizedValue)) {
-    throw new Error('Invalid due time.');
-  }
-
-  const [hours, minutes] = normalizedValue.split(':').map(Number);
-  scheduledAt.setHours(hours, minutes, 0, 0);
-  return scheduledAt;
-}
-
 function getSnoozedSchedule(task, minutes) {
   const increment = Number(minutes);
 
@@ -219,7 +200,7 @@ function getSnoozedSchedule(task, minutes) {
 }
 
 function getDayRange(value) {
-  const start = parseDateOnly(value);
+  const start = parseDayStart(value);
   const end = new Date(start);
   end.setHours(23, 59, 59, 999);
 
